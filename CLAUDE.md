@@ -28,6 +28,13 @@ This host also runs the **hauskayu.com production store**.
   (`MedusaError` would map to 400).
 - Admin: Medusa UI + react-i18next (`src/admin/i18n`), dnd-kit for ordering, QR images fetched from
   `/admin/link-in-bio/qr` (session cookie).
+- Uploads (`src/lib/uploads.ts`): multer in memory (`src/api/middlewares.ts`, 413 from the middleware itself),
+  magic bytes decide the type, `Modules.FILE` `createFiles`/`deleteFiles`; the File Module ids the page owns live in
+  `lib_page.files`. **JSON columns are merged on update** (MikroORM `assign`), so a slot is cleared by writing
+  `null`, never by deleting the key (`files`, `focus`).
+- QR (`src/lib/qr.ts`): `qrcode` only computes the matrix (EC H); the SVG is ours (dots, rounded eyes, alignment
+  patterns kept solid — readers need them for perspective — logo zone ≈ 23 % of the side), `sharp` rasterises it.
+  jsQR 1.4 crashes on `inversionAttempts: "onlyInvert"`; tests use `attemptBoth` for the dark theme.
 - E2E (`integration-tests/e2e.mjs`): `LIB_ADMIN=1` also builds the Admin; the app's `/admin/e2e/flush` writes
   buffered clicks.
 

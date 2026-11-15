@@ -11,6 +11,11 @@ export const AdminPageBody = z.object({
   published: z.boolean().optional(),
   noindex: z.boolean().optional(),
   avatar: nullableString(2048),
+  profile_style: z.string().max(16).optional(),
+  hero: nullableString(2048),
+  hero_ratio: z.string().max(8).optional(),
+  qr_logo: nullableString(2048),
+  focus: z.object({ avatar: z.unknown().optional(), hero: z.unknown().optional() }).optional(),
   socials: z.array(z.object({ network: z.string().max(32), url: z.string().max(2048) })).max(20).optional(),
   theme: z.object({ background: z.string().max(16).optional(), text: z.string().max(16).optional(), accent: z.string().max(16).optional(), radius: z.string().max(8).optional(), button: z.string().max(8).optional() }).optional(),
   utm: z.boolean().optional(),
@@ -19,7 +24,7 @@ export const AdminPageBody = z.object({
   utm_campaign: nullableString(80),
   og_image: nullableString(2048),
   metadata,
-  translations: z.record(z.string().max(16), z.object({ title: z.string().max(200).optional(), bio: nullableString(1000), seo_title: nullableString(300), seo_description: nullableString(600) })).optional(),
+  translations: z.record(z.string().max(16), z.object({ title: z.string().max(200).optional(), bio: nullableString(1000), seo_title: nullableString(300), seo_description: nullableString(600), avatar_alt: nullableString(300), hero_alt: nullableString(300) })).optional(),
 })
 export type AdminPageBodyType = z.infer<typeof AdminPageBody>
 
@@ -50,7 +55,13 @@ export const AdminQrQuery = z.object({
   format: z.enum(["svg", "png"]).optional(),
   size: z.coerce.number().int().min(128).max(4096).optional(),
   download: z.coerce.boolean().optional(),
+  /** light: dark modules on white (default); dark: white modules on a black rounded card */
+  theme: z.enum(["light", "dark"]).optional(),
+  /** Centre logo: "brand" (plugin option qr.logo), "page" (the page's upload), "none"; default: page, else brand */
+  logo: z.enum(["brand", "page", "none"]).optional(),
 })
+export const AdminUploadQuery = z.object({ slot: z.enum(["avatar", "hero", "qr_logo"]) })
+export type AdminUploadQueryType = z.infer<typeof AdminUploadQuery>
 export const AdminSearchQuery = z.object({ type: z.enum(["product", "collection", "category", "post"]), q: z.string().max(200).optional(), limit: z.coerce.number().int().min(1).max(50).optional() })
 
 export const StorePageQuery = z.object({ locale: z.string().max(16).optional(), region_id: z.string().max(64).optional() })

@@ -76,7 +76,7 @@ const PageEditor = () => {
             <div className="px-6 py-4">
               <Heading level="h2">{t("lib.page.profile")}</Heading>
             </div>
-            <PageForm key={page.updated_at} page={page} config={config} />
+            <PageForm key={page.id} page={page} config={config} />
           </Container>
           <div className="flex justify-end">
             <Button
@@ -94,7 +94,7 @@ const PageEditor = () => {
         </div>
       </div>
       {editing !== null && <ItemForm key={editing === "new" ? "new" : editing.id} page={page} item={editing === "new" ? null : editing} config={config} open onClose={() => setEditing(null)} />}
-      {qr !== null && <QrDialog page={page} item={qr === "page" ? null : qr} open onClose={() => setQr(null)} />}
+      {qr !== null && <QrDialog page={page} item={qr === "page" ? null : qr} config={config} open onClose={() => setQr(null)} onPage={(p) => qc.setQueryData<typeof data>(pageKey(id), (old) => (old ? { ...old, page: { ...old.page, ...p } } : old))} />}
       <CreditFooter />
     </div>
   )

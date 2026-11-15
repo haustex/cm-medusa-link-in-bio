@@ -3,8 +3,9 @@ import { Button, IconButton, Input, Select, Switch, Text, Textarea, toast } from
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { api, errorOf, pageKey, PAGES_KEY, type AdminConfig, type AdminPage, type AdminPageInput, type Social, type SocialNetwork, type Theme } from "../lib/api"
+import { api, errorOf, pageKey, PAGES_KEY, type AdminConfig, type AdminPage, type AdminPageInput, type Focus, type HeroRatio, type ProfileStyle, type Social, type SocialNetwork, type Theme } from "../lib/api"
 import { Field } from "./states"
+import { UploadSlot } from "./upload-slot"
 
 type Draft = {
   name: string
@@ -13,8 +14,12 @@ type Draft = {
   published: boolean
   noindex: boolean
   avatar: string
+  profile_style: ProfileStyle
+  hero: string
+  hero_ratio: HeroRatio
+  focus: { avatar: Focus | null; hero: Focus | null }
   og_image: string
-  translations: Record<string, { title: string; bio: string; seo_title: string; seo_description: string }>
+  translations: Record<string, { title: string; bio: string; seo_title: string; seo_description: string; avatar_alt: string; hero_alt: string }>
   socials: Social[]
   theme: Theme
   utm: boolean
@@ -30,8 +35,12 @@ const fromPage = (p: AdminPage): Draft => ({
   published: p.published,
   noindex: p.noindex,
   avatar: p.avatar ?? "",
+  profile_style: p.profile_style ?? "circle",
+  hero: p.hero ?? "",
+  hero_ratio: p.hero_ratio ?? "16:9",
+  focus: { avatar: p.focus?.avatar ?? null, hero: p.focus?.hero ?? null },
   og_image: p.og_image ?? "",
-  translations: Object.fromEntries(p.locales.map((l) => [l, { title: p.translations[l]?.title ?? "", bio: p.translations[l]?.bio ?? "", seo_title: p.translations[l]?.seo_title ?? "", seo_description: p.translations[l]?.seo_description ?? "" }])),
+  translations: Object.fromEntries(p.locales.map((l) => [l, { title: p.translations[l]?.title ?? "", bio: p.translations[l]?.bio ?? "", seo_title: p.translations[l]?.seo_title ?? "", seo_description: p.translations[l]?.seo_description ?? "", avatar_alt: p.translations[l]?.avatar_alt ?? "", hero_alt: p.translations[l]?.hero_alt ?? "" }])),
   socials: p.socials,
   theme: p.theme,
   utm: p.utm,
@@ -43,7 +52,7 @@ const fromPage = (p: AdminPage): Draft => ({
 function toInput(d: Draft): AdminPageInput {
   const locales = d.locales.split(/[,\s]+/).map((x) => x.trim()).filter(Boolean)
   const translations: AdminPageInput["translations"] = {}
-  for (const [l, t] of Object.entries(d.translations)) if (locales.includes(l)) translations[l] = { title: t.title, bio: t.bio || null, seo_title: t.seo_title || null, seo_description: t.seo_description || null }
+  for (const [l, t] of Object.entries(d.translations)) if (locales.includes(l)) translations[l] = { title: t.title, bio: t.bio || null, seo_title: t.seo_title || null, seo_description: t.seo_description || null, avatar_alt: t.avatar_alt || null, hero_alt: t.hero_alt || null }
   return {
     name: d.name,
     handle: d.handle,
@@ -51,6 +60,10 @@ function toInput(d: Draft): AdminPageInput {
     published: d.published,
     noindex: d.noindex,
     avatar: d.avatar || null,
+    profile_style: d.profile_style,
+    hero: d.hero || null,
+    hero_ratio: d.hero_ratio,
+    focus: d.focus,
     og_image: d.og_image || null,
     translations,
     socials: d.socials,
@@ -74,7 +87,10 @@ export function PageForm({ page, config }: { page: AdminPage; config: AdminConfi
   const qc = useQueryClient()
   const [d, setD] = useState<Draft>(() => fromPage(page))
   const set = (patch: Partial<Draft>) => setD((x) => ({ ...x, ...patch }))
-  const setT = (l: string, k: keyof Draft["translations"][string], v: string) => setD((x) => ({ ...x, translations: { ...x.translations, [l]: { ...(x.translations[l] ?? { title: "", bio: "", seo_title: "", seo_description: "" }), [k]: v } } }))
+  const setT = (l: string, k: keyof Draft["translations"][string], v: string) => setD((x) => ({ ...x, translations: { ...x.translations, [l]: { ...(x.translations[l] ?? { title: "", bio: "", seo_title: "", seo_description: "", avatar_alt: "", hero_alt: "" }), [k]: v } } }))
+  /** After an upload/removal the server already stored the URL; only the image fields of the draft follow (other edits stay) */
+  const fromUpload = (p: AdminPage) => setD((x) => ({ ...x, avatar: p.avatar ?? "", hero: p.hero ?? "", focus: { avatar: p.focus?.avatar ?? x.focus.avatar, hero: p.focus?.hero ?? x.focus.hero } }))
+  const altOf = (k: "avatar_alt" | "hero_alt") => Object.fromEntries(locales.map((l) => [l, d.translations[l]?.[k] ?? ""]))
   const setTheme = (patch: Partial<Theme>) => setD((x) => ({ ...x, theme: { ...x.theme, ...patch } }))
   const locales = d.locales.split(/[,\s]+/).map((x) => x.trim()).filter(Boolean)
   const save = useMutation({
@@ -121,13 +137,49 @@ export function PageForm({ page, config }: { page: AdminPage; config: AdminConfi
         <Field label={t("lib.page.locales")} hint={t("lib.page.localesHint")}>
           <Input required value={d.locales} autoCapitalize="none" spellCheck={false} onChange={(e) => set({ locales: e.target.value })} style={{ height: 44 }} />
         </Field>
-        <Field label={t("lib.page.avatar")}>
+      </div>
+
+      <Section title={t("lib.page.images")}>
+        <Field label={t("lib.page.profileStyle")} hint={t(d.profile_style === "hero" ? "lib.page.profileStyleHeroHint" : "lib.page.profileStyleCircleHint")}>
+          <Select value={d.profile_style} onValueChange={(v) => set({ profile_style: v as ProfileStyle })}>
+            <Select.Trigger style={{ height: 44 }}><Select.Value /></Select.Trigger>
+            <Select.Content>
+              <Select.Item value="circle">{t("lib.page.profileCircle")}</Select.Item>
+              <Select.Item value="hero">{t("lib.page.profileHero")}</Select.Item>
+            </Select.Content>
+          </Select>
+        </Field>
+        {d.profile_style === "hero" && (
+          <>
+            <Field label={t("lib.page.hero")} hint={t("lib.page.heroHint")}>
+              <UploadSlot page={page} slot="hero" config={config} url={d.hero} ratio={d.hero_ratio === "3:2" ? 3 / 2 : 16 / 9} focus={d.focus.hero} onFocus={(f) => set({ focus: { ...d.focus, hero: f } })} alt={altOf("hero_alt")} onAlt={(l, v) => setT(l, "hero_alt", v)} onPage={fromUpload} />
+            </Field>
+            <div className="lib-cols-2">
+              <Field label={t("lib.page.heroRatio")}>
+                <Select value={d.hero_ratio} onValueChange={(v) => set({ hero_ratio: v as HeroRatio })}>
+                  <Select.Trigger style={{ height: 44 }}><Select.Value /></Select.Trigger>
+                  <Select.Content>
+                    <Select.Item value="16:9">16:9</Select.Item>
+                    <Select.Item value="3:2">3:2</Select.Item>
+                  </Select.Content>
+                </Select>
+              </Field>
+              <Field label={t("lib.page.heroUrl")}>
+                <Input type="url" inputMode="url" value={d.hero} onChange={(e) => set({ hero: e.target.value })} placeholder="https://" style={{ height: 44 }} />
+              </Field>
+            </div>
+          </>
+        )}
+        <Field label={t("lib.page.avatar")} hint={t(d.profile_style === "hero" ? "lib.page.avatarHeroHint" : "lib.page.avatarHint")}>
+          <UploadSlot page={page} slot="avatar" config={config} url={d.avatar} ratio={1} round focus={d.focus.avatar} onFocus={(f) => set({ focus: { ...d.focus, avatar: f } })} alt={altOf("avatar_alt")} onAlt={(l, v) => setT(l, "avatar_alt", v)} onPage={fromUpload} />
+        </Field>
+        <Field label={t("lib.page.avatarUrl")}>
           <Input type="url" inputMode="url" value={d.avatar} onChange={(e) => set({ avatar: e.target.value })} placeholder="https://" style={{ height: 44 }} />
         </Field>
         <Field label={t("lib.page.ogImage")} hint={t("lib.page.ogImageHint")}>
           <Input type="url" inputMode="url" value={d.og_image} onChange={(e) => set({ og_image: e.target.value })} placeholder="https://" style={{ height: 44 }} />
         </Field>
-      </div>
+      </Section>
 
       {locales.map((l) => (
         <Section key={l} title={`${l}${l === locales[0] ? ` · ${t("lib.defaultLocale")}` : ""}`}>

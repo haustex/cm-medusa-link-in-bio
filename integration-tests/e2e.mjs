@@ -133,7 +133,7 @@ function check(name, ok, detail) {
 }
 const section = (t) => console.log(`\n${t}`)
 
-const ctx = { admin: {}, pk: null }
+const ctx = { admin: {}, pk: null, serverDir: APP_DIR }
 const BROWSER_UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
 
 /** store: publishable key; raw: no JSON */
@@ -153,6 +153,35 @@ async function api(method, url, { body, headers = {}, store = false, admin = tru
   }
   return { status: res.status, json, text, buf, headers: res.headers }
 }
+
+/** Multipart upload of one image into a page slot (the Admin sends the same request through the SDK) */
+async function upload(pageId, slot, buf, filename, type = "application/octet-stream") {
+  const form = new FormData()
+  form.append("file", new Blob([buf], { type }), filename)
+  const res = await fetch(`${BASE}/admin/link-in-bio/pages/${pageId}/upload?slot=${slot}`, { method: "POST", headers: { authorization: ctx.admin.authorization }, body: form })
+  const text = await res.text()
+  let json
+  try {
+    json = JSON.parse(text)
+  } catch {
+    json = text
+  }
+  return { status: res.status, json }
+}
+const require_ = createRequire(import.meta.url)
+const sharp = require_(path.join(PLUGIN_DIR, "node_modules/sharp"))
+const jsQR = require_(path.join(PLUGIN_DIR, "node_modules/jsqr"))
+/** Test images straight from sharp: the same 64×48 picture in four formats */
+async function images() {
+  const base = sharp({ create: { width: 64, height: 48, channels: 4, background: { r: 200, g: 60, b: 30, alpha: 1 } } })
+  return { png: await base.clone().png().toBuffer(), jpg: await base.clone().jpeg().toBuffer(), webp: await base.clone().webp().toBuffer(), avif: await base.clone().avif().toBuffer() }
+}
+async function decodeQr(png, inverted) {
+  const { data, info } = await sharp(png).flatten({ background: inverted ? "#000000" : "#ffffff" }).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+  return jsQR(new Uint8ClampedArray(data.buffer, data.byteOffset, data.length), info.width, info.height, { inversionAttempts: inverted ? "attemptBoth" : "dontInvert" })?.data ?? null
+}
+/** Where the test app's local File Module provider writes public files */
+const staticFile = (url) => path.join(ctx.serverDir, "static", path.basename(new URL(url).pathname))
 
 async function login() {
   const auth = await api("POST", "/auth/user/emailpass", { body: ADMIN, admin: false })
@@ -446,9 +475,69 @@ async function checks() {
   r = await api("GET", "/admin/link-in-bio/pages")
   check("pages list carries 7/30-day counts", r.json.pages.find((p) => p.id === page.id).clicks_30d === 7 && r.json.pages.find((p) => p.id === page2.id).clicks_30d === 0, r.json.pages.map((p) => [p.handle, p.clicks_30d]))
 
+  section("Uploads (avatar, hero, QR logo through the File Module)")
+  const img = await images()
+  r = await api("GET", `/admin/link-in-bio/pages/${page.id}`)
+  check("page starts with circle style, no hero, nothing uploaded", r.json.page.profile_style === "circle" && r.json.page.hero === null && r.json.page.hero_ratio === "16:9" && r.json.page.uploads.avatar === false && r.json.page.focus.avatar === null, r.json.page)
+  r = await upload(page.id, "avatar", img.png, "avatar.png", "image/png")
+  check("PNG avatar uploaded: URL set (local provider: /static/{stamp}-lib-{handle}-avatar-{id}.png), marked as an upload", r.status === 200 && /^http:\/\/127\.0\.0\.1:9700\/static\/\d+-lib-links-avatar-[0-9a-f]{8}\.png$/.test(r.json.page.avatar ?? "") && r.json.page.uploads.avatar === true, r.json)
+  const avatar1 = r.json.page.avatar
+  check("…the file exists where the File Module put it", !!avatar1 && fs.existsSync(staticFile(avatar1)), avatar1 && staticFile(avatar1))
+  r = await upload(page.id, "avatar", img.jpg, "photo.PNG", "image/png")
+  check("JPEG bytes named .png: stored as .jpg (magic bytes, not the name); the previous avatar file is deleted", r.status === 200 && /\.jpg$/.test(r.json.page.avatar) && !fs.existsSync(staticFile(avatar1)), { avatar: r.json.page.avatar, oldExists: fs.existsSync(staticFile(avatar1)) })
+  const avatar2 = r.json.page.avatar
+  r = await upload(page.id, "hero", img.webp, "hero.webp", "image/webp")
+  check("WebP hero uploaded", r.status === 200 && /\.webp$/.test(r.json.page.hero) && r.json.page.uploads.hero === true, r.json)
+  r = await upload(page.id, "qr_logo", img.avif, "logo.avif", "image/avif")
+  check("AVIF QR logo uploaded", r.status === 200 && /\.avif$/.test(r.json.page.qr_logo) && r.json.page.uploads.qr_logo === true, r.json)
+  const qrLogo = r.json.page.qr_logo
+  r = await upload(page.id, "avatar", Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'), "logo.svg", "image/svg+xml")
+  check("SVG refused (400 invalid_image)", r.status === 400 && r.json.code === "invalid_image", r.json)
+  r = await upload(page.id, "avatar", Buffer.from("GIF89a" + "\0".repeat(40)), "a.gif", "image/gif")
+  check("GIF refused", r.status === 400 && r.json.code === "invalid_image", r.json)
+  r = await upload(page.id, "avatar", Buffer.concat([img.png, Buffer.alloc(5 * 1024 * 1024)]), "big.png", "image/png")
+  check("over 5 MB → 413 file_too_large", r.status === 413 && r.json.code === "file_too_large", r.json)
+  r = await upload(page.id, "banner", img.png, "a.png", "image/png")
+  check("unknown slot → 400", r.status === 400, r.json)
+  r = await fetch(`${BASE}/admin/link-in-bio/pages/${page.id}/upload?slot=avatar`, { method: "POST", body: new FormData() })
+  check("upload needs an admin session", r.status === 401, r.status)
+  check("avatar unchanged by the refused uploads", (await api("GET", `/admin/link-in-bio/pages/${page.id}`)).json.page.avatar === avatar2)
+  r = await api("POST", `/admin/link-in-bio/pages/${page.id}`, { body: { profile_style: "hero", hero_ratio: "3:2", focus: { hero: { x: 30.6, y: 120 }, avatar: { x: "50", y: 20 } }, translations: { id: { avatar_alt: "Logo Haus Kayu", hero_alt: "Bengkel di Jepara" }, en: { hero_alt: "The workshop in Jepara" } } } })
+  check("hero style, ratio, focal points (clamped/rounded) and alt texts saved", r.status === 200 && r.json.page.profile_style === "hero" && r.json.page.hero_ratio === "3:2" && r.json.page.focus.hero.x === 31 && r.json.page.focus.hero.y === 100 && r.json.page.focus.avatar.x === 50 && r.json.page.translations.id.hero_alt === "Bengkel di Jepara" && r.json.page.translations.en.avatar_alt === null, r.json.page)
+  r = await api("POST", `/admin/link-in-bio/pages/${page.id}`, { body: { profile_style: "banner", hero_ratio: "4:3", focus: { hero: null } } })
+  check("unknown style/ratio keep the current values; focus null → centre", r.json.page.profile_style === "hero" && r.json.page.hero_ratio === "3:2" && r.json.page.focus.hero === null && r.json.page.focus.avatar.y === 20, r.json.page)
+  r = await api("GET", "/store/link-in-bio/pages/links?locale=id", { store: true })
+  check("store page carries style, hero, ratio, focus and alt texts", r.status === 200 && r.json.page.profile_style === "hero" && r.json.page.hero_ratio === "3:2" && /\.webp$/.test(r.json.page.hero) && r.json.page.avatar === avatar2 && r.json.page.focus.avatar.y === 20 && r.json.page.avatar_alt === "Logo Haus Kayu" && r.json.page.hero_alt === "Bengkel di Jepara", r.json.page)
+  r = await api("GET", "/store/link-in-bio/pages/links?locale=en", { store: true })
+  check("…alt text per locale (en hero alt, avatar alt falls back to null)", r.json.page.hero_alt === "The workshop in Jepara" && r.json.page.avatar_alt === null, r.json.page)
+  r = await api("POST", `/admin/link-in-bio/pages/${page.id}`, { body: { avatar: "https://cdn.example.com/other.png" } })
+  check("pasting another URL over the uploaded avatar deletes the upload", r.status === 200 && r.json.page.avatar === "https://cdn.example.com/other.png" && r.json.page.uploads.avatar === false && !fs.existsSync(staticFile(avatar2)), { uploads: r.json.page.uploads, oldExists: fs.existsSync(staticFile(avatar2)) })
+  const heroUrl = (await api("GET", `/admin/link-in-bio/pages/${page.id}`)).json.page.hero
+  r = await api("DELETE", `/admin/link-in-bio/pages/${page.id}/upload?slot=hero`)
+  check("remove hero: URL null, file deleted, hero focus forgotten", r.status === 200 && r.json.page.hero === null && r.json.page.uploads.hero === false && !fs.existsSync(staticFile(heroUrl)) && r.json.page.focus.hero === null, r.json.page)
+  hook = await waitHook((h) => h.body?.link_in_bio?.handles?.includes("links"))
+  check("uploads and removals revalidate the page", !!hook, hooks)
+  hooks.length = 0
+  r = await upload(page2.id, "avatar", img.png, "a.png", "image/png")
+  const page2Avatar = r.json.page?.avatar
+  check("page2 avatar uploaded (deleted with the page below)", r.status === 200 && !!page2Avatar && fs.existsSync(staticFile(page2Avatar)), r.json)
+
   section("QR")
   r = await api("GET", `/admin/link-in-bio/qr?page_id=${page.id}&locale=en`)
   check("page QR (svg) encodes the en address", r.status === 200 && /image\/svg\+xml/.test(r.headers.get("content-type")) && r.headers.get("x-qr-url") === "https://storefront.e2e.test/us/links" && /<svg/.test(r.text) && /no-store/.test(r.headers.get("cache-control")), { ct: r.headers.get("content-type"), url: r.headers.get("x-qr-url") })
+  check("…light by default, with this page's uploaded logo on a white badge, nothing else embedded", /fill="#ffffff"/.test(r.text) && r.headers.get("x-qr-logo") === "page" && /<image href="data:image\/png;base64,/.test(r.text) && !/<script/.test(r.text), r.headers.get("x-qr-logo"))
+  r = await api("GET", `/admin/link-in-bio/qr?page_id=${page.id}&locale=en&theme=dark&logo=none&format=png&size=512`)
+  check("dark PNG without logo: 512 px, transparent corners, decodes (inverted) to the address", r.status === 200 && (await sharp(r.buf).metadata()).width === 512 && (await sharp(r.buf).metadata()).hasAlpha === true && r.headers.get("x-qr-logo") === "none" && (await decodeQr(r.buf, true)) === "https://storefront.e2e.test/us/links", { logo: r.headers.get("x-qr-logo") })
+  check("…and is not read by a scanner that never inverts", (await decodeQr(r.buf, false)) === null)
+  r = await api("GET", `/admin/link-in-bio/qr?page_id=${page.id}&locale=id&format=png&size=768&logo=page`)
+  check("light PNG with the page logo decodes", (await decodeQr(r.buf, false)) === "https://storefront.e2e.test/links" && r.headers.get("x-qr-logo") === "page")
+  r = await api("GET", `/admin/link-in-bio/qr?item_id=${prodItem.id}&format=png&theme=dark&download=1`)
+  check("item QR dark download: file name says -dark, decodes to the redirect", r.status === 200 && /filename="link-.*-dark\.png"/.test(r.headers.get("content-disposition")) && (await decodeQr(r.buf, true)) === `https://storefront.e2e.test/l/${prodItem.key}`, r.headers.get("content-disposition"))
+  r = await api("GET", `/admin/link-in-bio/qr?page_id=${page.id}&logo=brand`)
+  check("logo=brand without qr.logo in the options → no logo", r.status === 200 && r.headers.get("x-qr-logo") === "none" && !/<image/.test(r.text), r.headers.get("x-qr-logo"))
+  r = await api("GET", `/admin/link-in-bio/qr?page_id=${page.id}&theme=sepia`)
+  check("unknown theme → 400", r.status === 400, r.status)
+  check("the page's QR logo file is still there", fs.existsSync(staticFile(qrLogo)))
   r = await api("GET", `/admin/link-in-bio/qr?item_id=${prodItem.id}&format=png&size=256&download=1`)
   check("item QR (png, download) encodes the redirect", r.status === 200 && r.headers.get("content-type") === "image/png" && r.buf.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) && r.headers.get("x-qr-url") === `https://storefront.e2e.test/l/${prodItem.key}` && /attachment; filename="link-/.test(r.headers.get("content-disposition")), { ct: r.headers.get("content-type"), cd: r.headers.get("content-disposition") })
   r = await api("GET", `/admin/link-in-bio/qr`)
@@ -461,6 +550,7 @@ async function checks() {
   section("Delete page")
   r = await api("DELETE", `/admin/link-in-bio/pages/${page2.id}`)
   check("page2 deleted", r.status === 200 && r.json.deleted === true, r.json)
+  check("…its uploaded avatar file is deleted with it", !!page2Avatar && !fs.existsSync(staticFile(page2Avatar)), page2Avatar)
   hook = await waitHook((h) => h.body?.link_in_bio?.all === true)
   check("deleted page → revalidate all", !!hook && hook.body.link_in_bio.handles.includes("ramadan-2026"), hooks)
   r = await api("GET", "/store/link-in-bio/pages/ramadan-2026", { store: true })
@@ -503,6 +593,7 @@ async function main() {
   if (process.env.LIB_ADMIN === "1") {
     guarded("build")
     serverDir = path.join(APP_DIR, ".medusa/server")
+    ctx.serverDir = serverDir
     rmGuarded(path.join(serverDir, "node_modules"))
     fs.symlinkSync(path.join(APP_DIR, "node_modules"), path.join(serverDir, "node_modules"))
     checkAdminBuild(serverDir)

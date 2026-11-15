@@ -1,4 +1,11 @@
-import type { Social, Theme } from "./validate"
+import type { Focus, HeroRatio, ProfileStyle, Social, Theme } from "./validate"
+
+/** Uploads a page can own; each is one URL column + one File Module id in `files` */
+export type ImageSlot = "avatar" | "hero" | "qr_logo"
+export const IMAGE_SLOTS: ImageSlot[] = ["avatar", "hero", "qr_logo"]
+/** Keys are set to null rather than removed: MikroORM merges JSON objects on update, a missing key keeps the old value */
+export type PageFiles = Partial<Record<ImageSlot, string | null>>
+export type PageFocus = { avatar?: Focus | null; hero?: Focus | null }
 
 export type ItemType = "link" | "product" | "collection" | "category" | "promo" | "post" | "whatsapp" | "contact" | "header" | "divider"
 export const ITEM_TYPES: ItemType[] = ["link", "product", "collection", "category", "promo", "post", "whatsapp", "contact", "header", "divider"]
@@ -26,6 +33,12 @@ export type PageRow = {
   published: boolean
   noindex: boolean
   avatar: string | null
+  profile_style: ProfileStyle | string
+  hero: string | null
+  hero_ratio: HeroRatio | string
+  qr_logo: string | null
+  focus: PageFocus | null
+  files: PageFiles | null
   socials: Social[] | null
   theme: Theme | null
   utm: boolean
@@ -39,7 +52,7 @@ export type PageRow = {
   translations?: PageTranslationRow[]
   items?: ItemRow[]
 }
-export type PageTranslationRow = { id: string; locale: string; title: string; bio: string | null; seo_title: string | null; seo_description: string | null; page_id?: string }
+export type PageTranslationRow = { id: string; locale: string; title: string; bio: string | null; seo_title: string | null; seo_description: string | null; avatar_alt?: string | null; hero_alt?: string | null; page_id?: string }
 
 export type ItemRow = {
   id: string

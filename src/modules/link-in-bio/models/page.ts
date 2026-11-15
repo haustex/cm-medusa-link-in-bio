@@ -18,8 +18,20 @@ const Page = model
     published: model.boolean().default(false),
     /** Ask search engines not to index the public page */
     noindex: model.boolean().default(false),
-    /** Image URL (File Module or any https URL) */
+    /** Avatar URL (an upload through the plugin or any https URL) */
     avatar: model.text().nullable(),
+    /** "circle" (avatar only) or "hero" (wide header image fading into the background, avatar optional) */
+    profile_style: model.text().default("circle"),
+    /** Header image URL for the "hero" style */
+    hero: model.text().nullable(),
+    /** Aspect ratio the storefront reserves for the hero: "16:9" or "3:2" */
+    hero_ratio: model.text().default("16:9"),
+    /** Centre logo for this page's QR codes (upload); null = the brand logo from the plugin options */
+    qr_logo: model.text().nullable(),
+    /** Focal points in percent: { avatar?: { x, y }, hero?: { x, y } } */
+    focus: model.json().nullable(),
+    /** File Module ids of the uploads this page owns: { avatar?, hero?, qr_logo? } (deleted on replace/remove) */
+    files: model.json().nullable(),
     /** Social icons under the bio: [{ network, url }] in order */
     socials: model.json().nullable(),
     /** Colours and shape: { background, text, accent, radius } (hex colours, radius "none" | "sm" | "md" | "full") */

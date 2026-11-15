@@ -18,6 +18,11 @@ module.exports = defineConfig({
     },
   },
   admin: { disable: process.env.LIB_ADMIN !== "1", backendUrl: "/" },
+  modules: [
+    // Uploads (avatar, hero, QR logo) through the local provider: files in ./static, served by this server on 9700
+    // (the provider's default backend_url would point the URLs at localhost:9000)
+    { resolve: "@medusajs/medusa/file", options: { providers: [{ resolve: "@medusajs/medusa/file-local", id: "local", options: { upload_dir: "static", private_upload_dir: "private", backend_url: "http://127.0.0.1:9700/static" } }] } },
+  ],
   plugins: [
     {
       resolve: pluginDir,

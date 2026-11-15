@@ -11,6 +11,9 @@ const PageTranslation = model
     /** <title> / og:title; falls back to title */
     seo_title: model.text().nullable(),
     seo_description: model.text().nullable(),
+    /** Alt text of the avatar / hero image in this locale */
+    avatar_alt: model.text().nullable(),
+    hero_alt: model.text().nullable(),
     page: model.belongsTo(() => Page, { mappedBy: "translations" }),
   })
   .indexes([{ on: ["page_id", "locale"], unique: true, where: "deleted_at IS NULL" }])

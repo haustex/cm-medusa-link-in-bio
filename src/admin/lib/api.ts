@@ -1,7 +1,7 @@
 import { linkInBioAdmin } from "../../sdk"
 import { sdk } from "./client"
 
-export type { AdminConfig, AdminItem, AdminItemInput, AdminPage, AdminPageInput, ItemType, PageStats, SearchResult, Social, SocialNetwork, Theme } from "../../sdk"
+export type { AdminConfig, AdminItem, AdminItemInput, AdminPage, AdminPageInput, Focus, HeroRatio, ImageSlot, ItemType, PageStats, ProfileStyle, QrLogo, QrTheme, SearchResult, Social, SocialNetwork, Theme } from "../../sdk"
 export const api = linkInBioAdmin(sdk)
 
 export const KEY = ["link-in-bio"]
@@ -26,7 +26,7 @@ export function toLocalInput(iso: string | null | undefined) {
 /** datetime-local value → ISO (null when empty) */
 export const fromLocalInput = (v: string) => (v ? new Date(v).toISOString() : null)
 
-export const RULE_CODES = ["not_found", "invalid_url", "invalid_handle", "handle_taken", "reserved_handle", "invalid_locale", "invalid_target", "invalid_date", "invalid"] as const
+export const RULE_CODES = ["not_found", "invalid_url", "invalid_handle", "handle_taken", "reserved_handle", "invalid_locale", "invalid_target", "invalid_date", "invalid_image", "file_too_large", "invalid"] as const
 export function errorOf(e: unknown): { code: string | null; message: string } {
   const err = e as { message?: string; code?: string; status?: number }
   const m = err?.message ?? String(e)

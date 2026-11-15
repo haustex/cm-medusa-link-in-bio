@@ -4,7 +4,8 @@ import { cleanLocales, normalizeLocale } from "./locales"
 import { getOptions } from "./options"
 import { pageChanged } from "./revalidate"
 import type { PageRow, PageTranslationRow } from "./types"
-import { cleanHandle, cleanSocials, cleanTheme, cleanUrl, LibRuleError, str, strOrNull } from "./validate"
+import { filesAfterUrlChange, releaseAllFiles } from "./uploads"
+import { cleanFocus, cleanHandle, cleanHeroRatio, cleanProfileStyle, cleanSocials, cleanTheme, cleanUrl, LibRuleError, str, strOrNull } from "./validate"
 
 export const PAGE_RELATIONS = ["translations"]
 
@@ -28,6 +29,12 @@ export type PageInput = {
   published?: boolean
   noindex?: boolean
   avatar?: string | null
+  profile_style?: string
+  hero?: string | null
+  hero_ratio?: string
+  qr_logo?: string | null
+  /** { avatar?: { x, y }, hero?: { x, y } } in percent; a slot set to null goes back to the centre */
+  focus?: { avatar?: unknown; hero?: unknown }
   socials?: unknown
   theme?: unknown
   utm?: boolean
@@ -36,7 +43,17 @@ export type PageInput = {
   utm_campaign?: string | null
   og_image?: string | null
   metadata?: Record<string, unknown> | null
-  translations?: Record<string, { title?: string; bio?: string | null; seo_title?: string | null; seo_description?: string | null }>
+  translations?: Record<string, { title?: string; bio?: string | null; seo_title?: string | null; seo_description?: string | null; avatar_alt?: string | null; hero_alt?: string | null }>
+}
+
+/** Focal points merged over the stored ones; a slot sent as null goes back to the centre (stored as null: JSON columns merge on update) */
+function focusOf(input: PageInput["focus"], base: PageRow["focus"]): PageRow["focus"] {
+  const out = { ...(base ?? {}) }
+  for (const slot of ["avatar", "hero"] as const) {
+    if (!input || !(slot in input)) continue
+    out[slot] = cleanFocus(input[slot])
+  }
+  return out
 }
 
 const image = (v: unknown, field: string): string | null => {
@@ -73,6 +90,8 @@ async function writeTranslations(container: MedusaContainer, page: PageRow, loca
     if (t.bio !== undefined) data.bio = strOrNull(t.bio, 600)
     if (t.seo_title !== undefined) data.seo_title = strOrNull(t.seo_title, 200)
     if (t.seo_description !== undefined) data.seo_description = strOrNull(t.seo_description, 400)
+    if (t.avatar_alt !== undefined) data.avatar_alt = strOrNull(t.avatar_alt, 200)
+    if (t.hero_alt !== undefined) data.hero_alt = strOrNull(t.hero_alt, 200)
     if (row) updates.push({ id: row.id, ...data })
     else creates.push({ page_id: page.id, locale: code, title: str(t.title, 120) || page.name, ...data })
   }
@@ -102,6 +121,12 @@ export async function createPage(container: MedusaContainer, input: PageInput): 
     published: input.published === true,
     noindex: input.noindex === true,
     avatar: image(input.avatar, "avatar"),
+    profile_style: cleanProfileStyle(input.profile_style),
+    hero: image(input.hero, "hero"),
+    hero_ratio: cleanHeroRatio(input.hero_ratio),
+    qr_logo: image(input.qr_logo, "qr_logo"),
+    focus: focusOf(input.focus, null),
+    files: null,
     socials: cleanSocials(input.socials),
     theme: cleanTheme(input.theme),
     utm: input.utm !== false,
@@ -135,7 +160,19 @@ export async function updatePage(container: MedusaContainer, id: string, input: 
   if (input.locales !== undefined) data.locales = locales
   if (input.published !== undefined) data.published = input.published === true
   if (input.noindex !== undefined) data.noindex = input.noindex === true
-  if (input.avatar !== undefined) data.avatar = image(input.avatar, "avatar")
+  // a pasted URL over an upload: the upload is deleted and its id forgotten
+  let files = page.files ?? null
+  for (const slot of ["avatar", "hero", "qr_logo"] as const) {
+    if (input[slot] === undefined) continue
+    const url = image(input[slot], slot)
+    data[slot] = url
+    const next = await filesAfterUrlChange(container, { ...page, files }, slot, url)
+    if (next) files = next
+  }
+  if (files !== (page.files ?? null)) data.files = files
+  if (input.profile_style !== undefined) data.profile_style = cleanProfileStyle(input.profile_style, cleanProfileStyle(page.profile_style))
+  if (input.hero_ratio !== undefined) data.hero_ratio = cleanHeroRatio(input.hero_ratio, cleanHeroRatio(page.hero_ratio))
+  if (input.focus !== undefined) data.focus = focusOf(input.focus, page.focus)
   if (input.socials !== undefined) data.socials = cleanSocials(input.socials)
   if (input.theme !== undefined) data.theme = cleanTheme(input.theme, cleanTheme(page.theme))
   if (input.utm !== undefined) data.utm = input.utm !== false
@@ -155,6 +192,7 @@ export async function updatePage(container: MedusaContainer, id: string, input: 
 export async function deletePage(container: MedusaContainer, id: string): Promise<void> {
   const page = await getPage(container, id)
   await service(container).deleteLibPages([id])
+  await releaseAllFiles(container, page)
   pageChanged(container, page.handle, { all: true })
 }
 

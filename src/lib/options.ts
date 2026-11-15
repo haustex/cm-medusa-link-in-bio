@@ -71,6 +71,11 @@ export type PluginOptions = {
     /** Changes within this window become one call. Default 2000 */
     delay_ms?: number
   }
+  qr?: {
+    /** Logo drawn in the centre of every QR code unless a page uploads its own: an https URL or an absolute file
+     * path of a PNG/JPEG/WebP (square works best; it is shown on a white badge). Default none */
+    logo?: string
+  }
   /** Show the small "by Haus Kayu" credit under the plugin's Admin pages. Default false */
   showCredit?: boolean
 }
@@ -91,6 +96,7 @@ export type ResolvedOptions = {
   rate_limit: { window_seconds: number; max: number }
   reserved_handles: string[]
   revalidate: { url: string; secret: string | null; header: string; delay_ms: number } | null
+  qr: { logo: string | null }
   showCredit: boolean
 }
 
@@ -136,6 +142,7 @@ export function resolveOptions(raw: PluginOptions | undefined): ResolvedOptions 
     rate_limit: { window_seconds: num(rl.window_seconds, 600, 1), max: num(rl.max, 300) },
     reserved_handles: list(o.reserved_handles).map((h) => h.toLowerCase()),
     revalidate: o.revalidate && str(o.revalidate.url) ? { url: str(o.revalidate.url)!, secret: str(o.revalidate.secret), header: str(o.revalidate.header) ?? "x-revalidate-secret", delay_ms: num(o.revalidate.delay_ms, 2000) } : null,
+    qr: { logo: str(o.qr?.logo) },
     showCredit: o.showCredit === true,
   }
 }

@@ -26,7 +26,10 @@
     "clicksOff": "Penghitungan klik dimatikan di opsi plugin.",
     "defaultLocale": "Utama",
     "untitled": "Tanpa judul",
-    "credit": { "text": "Link in bio oleh Haus Kayu", "help": "Bantuan & masalah" },
+    "credit": {
+      "text": "Link in bio oleh Haus Kayu",
+      "help": "Bantuan & masalah"
+    },
     "page": {
       "profile": "Profil",
       "name": "Nama internal",
@@ -38,9 +41,9 @@
       "published": "Tayang",
       "publishedHint": "Halaman yang tidak tayang menjawab 404 dan tautannya berhenti bekerja.",
       "noindex": "Sembunyikan dari mesin pencari",
-      "avatar": "URL avatar",
+      "avatar": "Avatar",
       "ogImage": "URL gambar bagikan",
-      "ogImageHint": "Kosongkan agar storefront menggambarnya dari avatar dan nama.",
+      "ogImageHint": "Kosongkan agar storefront menggambarnya dari gambar header atau avatar dan judul.",
       "title": "Nama tampil",
       "bio": "Bio",
       "seoTitle": "Judul halaman (SEO)",
@@ -73,7 +76,20 @@
       "deleted": "Halaman dihapus",
       "created": "Halaman dibuat",
       "urls": "Alamat publik",
-      "noStorefront": "Isi storefront.url di opsi plugin untuk melihat alamat publik dan kode QR."
+      "noStorefront": "Isi storefront.url di opsi plugin untuk melihat alamat publik dan kode QR.",
+      "images": "Gambar",
+      "profileStyle": "Gaya profil",
+      "profileCircle": "Lingkaran — avatar bulat",
+      "profileHero": "Hero — gambar header lebar",
+      "profileStyleCircleHint": "Avatar dalam lingkaran di atas nama.",
+      "profileStyleHeroHint": "Gambar header lebar yang memudar ke warna latar; avatar (opsional) tampil kecil di tepi bawahnya.",
+      "hero": "Gambar header",
+      "heroHint": "Tampil selebar halaman di atas; letakkan subjek dekat titik fokus.",
+      "heroRatio": "Rasio header",
+      "heroUrl": "…atau URL gambar header",
+      "avatarHint": "Paling pas persegi; tampil dalam lingkaran. Kosong = inisial nama tampil.",
+      "avatarHeroHint": "Opsional pada gaya hero: tampil kecil di tepi bawah header.",
+      "avatarUrl": "…atau URL avatar"
     },
     "item": {
       "items": "Tautan",
@@ -157,9 +173,19 @@
       "page": "QR halaman",
       "item": "QR tautan ini",
       "locale": "Bahasa",
-      "svg": "Unduh SVG",
+      "svg": "Unduh SVG (cetak)",
       "png": "Unduh PNG",
-      "encodes": "Berisi {{url}}"
+      "encodes": "Berisi {{url}}",
+      "theme": "Tema",
+      "light": "Terang",
+      "dark": "Gelap",
+      "logo": "Logo",
+      "logoBrand": "Logo brand",
+      "logoPage": "Logo halaman ini",
+      "logoNone": "Tanpa logo",
+      "logoHint": "PNG/JPEG/WebP persegi, tampil di lencana putih di tengah (juga pada tema gelap). Tanpa ini dipakai logo brand dari opsi plugin.",
+      "size": "Ukuran PNG",
+      "darkWarning": "Kode gelap (terang di atas gelap) terbaca ponsel masa kini; sebagian pemindai lama tidak bisa membaca kode terbalik. Pakai tema terang bila itu penting."
     },
     "stats": {
       "title": "Klik",
@@ -176,7 +202,23 @@
       "invalid_target": "Periksa tujuan tautan.",
       "invalid_date": "Periksa tanggal: akhir harus setelah mulai.",
       "invalid": "Periksa formulir.",
-      "unknown": "Terjadi kesalahan."
+      "unknown": "Terjadi kesalahan.",
+      "invalid_image": "Hanya gambar JPEG, PNG, WebP, atau AVIF (bukan SVG).",
+      "file_too_large": "Gambar terlalu besar (maks 5 MB)."
+    },
+    "upload": {
+      "drop": "Jatuhkan gambar di sini atau tekan untuk memilih",
+      "choose": "Pilih gambar",
+      "replace": "Ganti",
+      "remove": "Hapus gambar",
+      "hint": "JPEG, PNG, WebP, atau AVIF, maks {{mb}} MB. Disimpan bersama file lain; mengganti menghapus yang lama.",
+      "focus": "Titik fokus",
+      "focusHint": "Klik gambar untuk menentukan titik fokus (tetap terlihat saat gambar dipotong).",
+      "preview": "Pratinjau",
+      "alt": "Teks alt",
+      "external": "URL eksternal: tidak dihapus saat diganti.",
+      "uploaded": "Gambar terunggah",
+      "removed": "Gambar dihapus"
     }
   }
 }

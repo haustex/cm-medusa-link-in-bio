@@ -7,7 +7,7 @@ import { pageLocales, pick } from "./serialize"
 import { CLICKABLE, UTM_TYPES, type EntityInfo, type ItemRow, type PageRow, type PostInfo, type ProductInfo } from "./types"
 import { internalUrl, pageUrl, redirectUrl, whatsappUrl } from "./urls"
 import { withUtm, type UtmParams } from "./utm"
-import { cleanSocials, cleanTheme } from "./validate"
+import { cleanFocus, cleanHeroRatio, cleanProfileStyle, cleanSocials, cleanTheme, type Focus, type HeroRatio, type ProfileStyle } from "./validate"
 
 export type StoreItem = {
   id: string
@@ -44,6 +44,16 @@ export type StorePage = {
   seo_title: string
   seo_description: string | null
   avatar: string | null
+  /** Alt text of the avatar in this locale (null = the storefront's default wording) */
+  avatar_alt: string | null
+  /** "circle": avatar only. "hero": `hero` as a wide header fading into the background, the avatar small over its edge */
+  profile_style: ProfileStyle
+  hero: string | null
+  hero_alt: string | null
+  /** Aspect ratio to reserve for the hero ("16:9" | "3:2"), so the page never shifts while it loads */
+  hero_ratio: HeroRatio
+  /** Focal points in percent for object-position / cropping; null = centre */
+  focus: { avatar: Focus | null; hero: Focus | null }
   og_image: string | null
   noindex: boolean
   socials: ReturnType<typeof cleanSocials>
@@ -226,6 +236,12 @@ export async function storePage(container: MedusaContainer, page: PageRow, ctx: 
     seo_title: tr?.seo_title ?? tr?.title ?? page.name,
     seo_description: tr?.seo_description ?? tr?.bio ?? null,
     avatar: page.avatar ?? null,
+    avatar_alt: tr?.avatar_alt ?? null,
+    profile_style: cleanProfileStyle(page.profile_style),
+    hero: page.hero ?? null,
+    hero_alt: tr?.hero_alt ?? null,
+    hero_ratio: cleanHeroRatio(page.hero_ratio),
+    focus: { avatar: cleanFocus(page.focus?.avatar), hero: cleanFocus(page.focus?.hero) },
     og_image: page.og_image ?? null,
     noindex: !!page.noindex,
     socials: cleanSocials(page.socials),

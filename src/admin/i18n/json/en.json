@@ -27,7 +27,10 @@
     "clicksOff": "Click counting is off in the plugin options.",
     "defaultLocale": "Default",
     "untitled": "Untitled",
-    "credit": { "text": "Link in bio by Haus Kayu", "help": "Help & issues" },
+    "credit": {
+      "text": "Link in bio by Haus Kayu",
+      "help": "Help & issues"
+    },
     "page": {
       "profile": "Profile",
       "name": "Internal name",
@@ -39,9 +42,9 @@
       "published": "Published",
       "publishedHint": "Unpublished pages answer 404 and their links stop working.",
       "noindex": "Hide from search engines",
-      "avatar": "Avatar URL",
+      "avatar": "Avatar",
       "ogImage": "Share image URL",
-      "ogImageHint": "Leave empty to let the storefront draw one from the avatar and the title.",
+      "ogImageHint": "Leave empty to let the storefront draw one from the header image or avatar and the title.",
       "title": "Display name",
       "bio": "Bio",
       "seoTitle": "Page title (SEO)",
@@ -74,7 +77,20 @@
       "deleted": "Page deleted",
       "created": "Page created",
       "urls": "Public address",
-      "noStorefront": "Set storefront.url in the plugin options to see the public address and QR codes."
+      "noStorefront": "Set storefront.url in the plugin options to see the public address and QR codes.",
+      "images": "Images",
+      "profileStyle": "Profile style",
+      "profileCircle": "Circle — round avatar",
+      "profileHero": "Hero — wide header image",
+      "profileStyleCircleHint": "The avatar in a circle above the name.",
+      "profileStyleHeroHint": "A wide header image fading into the background; the avatar (optional) sits small over its lower edge.",
+      "hero": "Header image",
+      "heroHint": "Shown full width at the top; keep the subject near the focal point.",
+      "heroRatio": "Header ratio",
+      "heroUrl": "…or header image URL",
+      "avatarHint": "Square works best; it is shown in a circle. Empty = the initials of the display name.",
+      "avatarHeroHint": "Optional with the hero style: shown small over the header's lower edge.",
+      "avatarUrl": "…or avatar URL"
     },
     "item": {
       "items": "Links",
@@ -159,9 +175,19 @@
       "page": "QR of the page",
       "item": "QR of this link",
       "locale": "Language",
-      "svg": "Download SVG",
+      "svg": "Download SVG (print)",
       "png": "Download PNG",
-      "encodes": "Encodes {{url}}"
+      "encodes": "Encodes {{url}}",
+      "theme": "Theme",
+      "light": "Light",
+      "dark": "Dark",
+      "logo": "Logo",
+      "logoBrand": "Brand logo",
+      "logoPage": "This page's logo",
+      "logoNone": "No logo",
+      "logoHint": "A square PNG/JPEG/WebP shown on a white badge in the centre (also in the dark theme). Without one, the brand logo from the plugin options is used.",
+      "size": "PNG size",
+      "darkWarning": "Dark codes (light on dark) are read by current phones; some older scanners cannot read inverted codes. Use the light theme where that matters."
     },
     "stats": {
       "title": "Clicks",
@@ -178,7 +204,23 @@
       "invalid_target": "Check the link's target.",
       "invalid_date": "Check the dates: the end must come after the start.",
       "invalid": "Check the form.",
-      "unknown": "Something went wrong."
+      "unknown": "Something went wrong.",
+      "invalid_image": "Only JPEG, PNG, WebP or AVIF images (no SVG).",
+      "file_too_large": "The image is too large (5 MB at most)."
+    },
+    "upload": {
+      "drop": "Drop an image here or press to choose",
+      "choose": "Choose image",
+      "replace": "Replace",
+      "remove": "Remove image",
+      "hint": "JPEG, PNG, WebP or AVIF, up to {{mb}} MB. Stored with your other files; replacing deletes the old one.",
+      "focus": "Focal point",
+      "focusHint": "Click the picture to set the focal point (kept visible when the image is cropped).",
+      "preview": "Preview",
+      "alt": "Alt text",
+      "external": "An external URL: it is not deleted when replaced.",
+      "uploaded": "Image uploaded",
+      "removed": "Image removed"
     }
   }
 }

@@ -27,9 +27,9 @@ kontak), banyak halaman, teks per bahasa, jadwal tampil, klik terhitung tanpa co
 
 | Plugin | Medusa | Node | Tested in CI on |
 | --- | --- | --- | --- |
-| 0.1.x | 2.19.0 or newer 2.x (`^2.19.0`) | 20.19+ or 22.12+ | Medusa 2.19.0 and 2.22.2 |
+| 0.1.x – 0.2.x | 2.19.0 or newer 2.x (`^2.19.0`) | 20.19+ or 22.12+ | Medusa 2.19.0 and 2.22.2 |
 
-No other service needed. With Redis as Medusa's Cache Module the rate limit is shared by every server process.
+No other service needed (images go through Medusa's File Module, whichever provider the project uses). With Redis as Medusa's Cache Module the rate limit is shared by every server process.
 [medusa-blog-seo](https://github.com/haustex/cm-medusa-blog-seo) is optional (the "Article" item type).
 
 ### Quick start
@@ -68,10 +68,17 @@ out of the box; for any other storefront see [Storefront](#storefront).
 
 ### Features
 
-- **Pages**: handle (`links`, `ramadan-2026`, …), internal name, avatar, display name and bio per locale, SEO
+- **Pages**: handle (`links`, `ramadan-2026`, …), internal name, display name and bio per locale, SEO
   title/description, social icons (Instagram, TikTok, Facebook, X, YouTube, Pinterest, LinkedIn, Threads, WhatsApp,
   Telegram, Shopee, Tokopedia, Etsy, e-mail, website), colours and shape (background, text, buttons; square to pill;
   solid/outline/soft), published flag, `noindex`, optional share image. As many pages as you like.
+- **Profile images** uploaded in the Admin (drag and drop or file picker) and stored through Medusa's File Module —
+  local `static`, S3, R2, whatever the project uses: an **avatar** (round) and a **hero** header image. JPEG, PNG,
+  WebP or AVIF recognised by their first bytes (the file name and declared type are not trusted), at most 5 MB, SVG
+  never. Preview with a focal point set by clicking (kept in view when the storefront crops: avatar 1:1, hero 16:9
+  or 3:2), alt text per locale. Replacing or removing deletes the previous file, so nothing piles up; pasting an
+  external URL instead still works. Two **profile styles** per page: *circle* (the avatar, or the initials) and
+  *hero* (the header image full width, fading into the page colour, the avatar small over its edge).
 - **Items**, drag-and-drop ordered, each with label and second line per locale, optional image or icon, "featured"
   size, visible switch and a show-from / hide-after schedule:
   - **Link**: any `http(s)` URL.
@@ -89,7 +96,12 @@ out of the box; for any other storefront see [Storefront](#storefront).
 - **UTM**: `utm_source=link-in-bio&utm_medium=social&utm_campaign={page handle}&utm_content={item key}` are added to
   product, collection, category, article, promo and plain links, unless the link already carries its own `utm_*`
   parameters. Names are options; switch off per page or per item. Never added to WhatsApp, `tel:` or `mailto:`.
-- **QR codes** in the Admin for every page (per language) and every link, as SVG or PNG (up to 4096 px).
+- **QR codes** in the Admin for every page (per language) and every link, drawn by the plugin from the module
+  matrix with error correction H: round dots, rounded "eyes", a **logo** in the centre on a clean white badge (the
+  brand logo from the `qr.logo` option, or one uploaded per page; about 5 % of the area), a proper quiet zone.
+  **Light** (black on white) or **dark** theme (white on a black rounded card, corners transparent — the Admin
+  notes that some older scanners cannot read inverted codes). SVG for print and PNG at 1024, 2048 or 4096 px.
+  Every variant is decoded in the test suite (jsQR) at 256–1024 px, with and without logo.
 - **Security**: only absolute `http(s)` URLs without credentials are accepted (no `javascript:`, `data:`, relative
   paths); the redirect only ever sends a visitor to a URL an admin saved, nothing in the request chooses the target;
   per-IP rate limit on the public routes (300 requests / 10 minutes by default, hash of the address in the cache
@@ -123,10 +135,16 @@ out of the box; for any other storefront see [Storefront](#storefront).
     rate_limit: { window_seconds: 600, max: 300 },    // 0 disables
     reserved_handles: ["admin"],
     revalidate: { url: "https://your-store.com/api/revalidate", secret: process.env.REVALIDATE_SECRET },
+    qr: { logo: "https://your-store.com/brand/mark.png" }, // centre logo of the QR codes (https URL or absolute file path)
     showCredit: false,                                // "Link in bio by Haus Kayu" under the Admin pages
   },
 }
 ```
+
+`qr.logo` is a square PNG/JPEG/WebP (an https URL fetched and cached for ten minutes, or an absolute path on the
+server) drawn in the centre of every QR code on a white badge; a page can upload its own in the Admin instead. The
+images themselves (avatar, hero, QR logo) are stored through the File Module, so configure a provider with public
+URLs the storefront can reach (the default local provider serves `./static`).
 
 `revalidate` tells the storefront about public changes: every change to a page or its items within `delay_ms`
 (default 2000) becomes one `POST { link_in_bio: { handles: ["links", …], all } }` to `url`, with the secret in the
@@ -173,10 +191,16 @@ Both store routes need the publishable API key; `/l/{key}` does not.
 
 `/admin/link-in-bio/config`, `/pages` (GET, POST), `/pages/{id}` (GET with items + counts, POST, DELETE),
 `/pages/{id}/items` (GET, POST), `/pages/{id}/items/{itemId}` (GET, POST, DELETE), `/pages/{id}/items/reorder`
-(POST `{ ids }`), `/pages/{id}/stats?days=30`, `/qr?page_id=&locale=|item_id=&format=svg|png&size=&download=1`,
-`/search?type=product|collection|category|post&q=`. Rule violations answer `{ code, message, detail }` with codes
-`invalid_url`, `invalid_handle`, `handle_taken`, `reserved_handle`, `invalid_locale`, `invalid_target`,
-`invalid_date`, `invalid`, `not_found`. `linkInBioAdmin(sdk)` in `medusa-link-in-bio/sdk` wraps all of them.
+(POST `{ ids }`), `/pages/{id}/upload?slot=avatar|hero|qr_logo` (POST multipart field `file`; DELETE removes the
+image), `/pages/{id}/stats?days=30`,
+`/qr?page_id=&locale=|item_id=&format=svg|png&size=&download=1&theme=light|dark&logo=brand|page|none`,
+`/search?type=product|collection|category|post&q=`. Page fields for the images: `avatar`, `hero`, `qr_logo` (URLs),
+`profile_style` (`circle` | `hero`), `hero_ratio` (`16:9` | `3:2`), `focus: { avatar, hero }` (`{ x, y }` in
+percent, null = centre), `uploads` (which of them the plugin owns), translations `avatar_alt` / `hero_alt`. Rule
+violations answer `{ code, message, detail }` with codes `invalid_url`, `invalid_handle`, `handle_taken`,
+`reserved_handle`, `invalid_locale`, `invalid_target`, `invalid_date`, `invalid_image`, `file_too_large` (413),
+`invalid`, `not_found`. `linkInBioAdmin(sdk)` in `medusa-link-in-bio/sdk` wraps all of them (`upload(id, slot,
+file)`, `removeUpload`, `qrUrl({ theme, logo })`).
 
 ### Limits
 
@@ -203,9 +227,15 @@ or set `redirect_url` to any address that forwards to the backend's `/l/{key}`.
 
 ### Fitur
 
-- **Halaman**: handle (`links`, `ramadan-2026`, …), nama internal, avatar, nama tampil dan bio per bahasa, judul dan
+- **Halaman**: handle (`links`, `ramadan-2026`, …), nama internal, nama tampil dan bio per bahasa, judul dan
   deskripsi SEO, ikon sosial, warna dan bentuk (latar, teks, tombol; siku sampai pil), status tayang, `noindex`,
   gambar bagikan opsional. Jumlah halaman bebas.
+- **Gambar profil** diunggah dari Admin (drag & drop / pilih file) lewat File Module Medusa (lokal, S3, R2 — apa pun
+  yang dipakai proyek): **avatar** (bulat) dan **hero** (gambar header). JPEG/PNG/WebP/AVIF dikenali dari magic
+  bytes, maks 5 MB, SVG ditolak. Pratinjau dengan titik fokus (klik gambar; dipakai saat dipotong: avatar 1:1, hero
+  16:9 atau 3:2), teks alt per bahasa. Ganti/hapus menghapus file lama (tidak ada file yatim). Dua **gaya profil**
+  per halaman: *lingkaran* (avatar atau inisial) dan *hero* (header lebar penuh yang memudar ke warna latar, avatar
+  kecil menimpa tepi bawahnya).
 - **Item** diurutkan drag-and-drop, masing-masing dengan label dan baris kedua per bahasa, gambar atau ikon, ukuran
   unggulan, saklar tampil, dan jadwal tampil-mulai / sembunyikan-setelah: tautan, produk (harga terendah di region
   pengunjung + stok, live), koleksi, kategori, kode promo (disalin sekali ketuk, opsional dengan tautan), artikel
@@ -216,7 +246,11 @@ or set `redirect_url` to any address that forwards to the backend's `/l/{key}`.
   diarahkan tapi tidak dihitung. Admin menampilkan 7 hari, 30 hari, total, dan grafik batang 30 hari.
 - **UTM** otomatis (`utm_source`, `utm_medium`, `utm_campaign` = handle halaman, `utm_content` = key item) untuk
   tautan web; tautan yang sudah punya `utm_*` dibiarkan; bisa dimatikan per halaman atau per item.
-- **Kode QR** per halaman (per bahasa) dan per tautan, SVG atau PNG.
+- **Kode QR** per halaman (per bahasa) dan per tautan, digambar plugin sendiri (koreksi kesalahan H): modul titik
+  bulat, "mata" kotak membulat, logo di tengah pada lencana putih bersih (logo brand dari opsi `qr.logo` atau unggahan
+  per halaman), quiet zone cukup. Tema **terang** (hitam di putih) atau **gelap** (putih di kartu hitam membulat;
+  Admin mengingatkan sebagian pemindai lama tidak membaca kode terbalik). SVG untuk cetak, PNG 1024/2048/4096 px.
+  Semua varian diuji decode (jsQR) di rangkaian tes.
 - **Keamanan**: hanya URL `http(s)` absolut tanpa kredensial; redirect hanya ke URL yang disimpan admin (bukan open
   redirect); rate limit per IP di route publik; halaman tidak tayang / item tersembunyi / kedaluwarsa menjawab 410.
 

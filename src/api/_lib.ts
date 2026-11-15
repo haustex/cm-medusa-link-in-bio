@@ -15,6 +15,8 @@ const STATUS: Record<LibRuleError["code"], number> = {
   invalid_target: 400,
   invalid_date: 400,
   invalid: 400,
+  invalid_image: 400,
+  file_too_large: 413,
 }
 
 /** Runs a handler; rule violations answer with { type, code, message, detail } (the Admin translates by code) */

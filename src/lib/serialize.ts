@@ -1,6 +1,6 @@
 import { visibility } from "./schedule"
-import type { ItemRow, ItemTranslationRow, PageRow, PageTranslationRow } from "./types"
-import { cleanSocials, cleanTheme } from "./validate"
+import type { ItemRow, ItemTranslationRow, PageRow } from "./types"
+import { cleanFocus, cleanHeroRatio, cleanProfileStyle, cleanSocials, cleanTheme, type Focus, type HeroRatio, type ProfileStyle } from "./validate"
 
 const iso = (d: Date | string | null | undefined): string | null => (d == null ? null : d instanceof Date ? d.toISOString() : new Date(d).toISOString())
 
@@ -19,6 +19,14 @@ export type AdminPage = {
   published: boolean
   noindex: boolean
   avatar: string | null
+  profile_style: ProfileStyle
+  hero: string | null
+  hero_ratio: HeroRatio
+  qr_logo: string | null
+  /** Focal points in percent (null = centre) */
+  focus: { avatar: Focus | null; hero: Focus | null }
+  /** Which images are uploads the plugin owns (as opposed to pasted URLs) */
+  uploads: { avatar: boolean; hero: boolean; qr_logo: boolean }
   socials: ReturnType<typeof cleanSocials>
   theme: ReturnType<typeof cleanTheme>
   utm: boolean
@@ -27,7 +35,7 @@ export type AdminPage = {
   utm_campaign: string | null
   og_image: string | null
   metadata: Record<string, unknown> | null
-  translations: Record<string, Omit<PageTranslationRow, "id" | "locale" | "page_id">>
+  translations: Record<string, { title: string; bio: string | null; seo_title: string | null; seo_description: string | null; avatar_alt: string | null; hero_alt: string | null }>
   created_at: string
   updated_at: string
   /** Filled by the route: public URL per locale, counts */
@@ -49,6 +57,12 @@ export function toAdminPage(p: PageRow): AdminPage {
     published: !!p.published,
     noindex: !!p.noindex,
     avatar: p.avatar ?? null,
+    profile_style: cleanProfileStyle(p.profile_style),
+    hero: p.hero ?? null,
+    hero_ratio: cleanHeroRatio(p.hero_ratio),
+    qr_logo: p.qr_logo ?? null,
+    focus: { avatar: cleanFocus(p.focus?.avatar), hero: cleanFocus(p.focus?.hero) },
+    uploads: { avatar: !!p.files?.avatar, hero: !!p.files?.hero, qr_logo: !!p.files?.qr_logo },
     socials: cleanSocials(p.socials),
     theme: cleanTheme(p.theme),
     utm: p.utm !== false,
@@ -57,7 +71,7 @@ export function toAdminPage(p: PageRow): AdminPage {
     utm_campaign: p.utm_campaign ?? null,
     og_image: p.og_image ?? null,
     metadata: p.metadata ?? null,
-    translations: Object.fromEntries(Object.entries(t).map(([l, r]) => [l, { title: r.title, bio: r.bio ?? null, seo_title: r.seo_title ?? null, seo_description: r.seo_description ?? null }])),
+    translations: Object.fromEntries(Object.entries(t).map(([l, r]) => [l, { title: r.title, bio: r.bio ?? null, seo_title: r.seo_title ?? null, seo_description: r.seo_description ?? null, avatar_alt: r.avatar_alt ?? null, hero_alt: r.hero_alt ?? null }])),
     created_at: iso(p.created_at)!,
     updated_at: iso(p.updated_at)!,
   }
