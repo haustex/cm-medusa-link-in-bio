@@ -1,6 +1,6 @@
 {
   "name": "medusa-link-in-bio",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Link-in-bio pages for Medusa v2: profile with uploaded avatar or hero image, drag-and-drop links, live products with price and stock, collections, promo codes, blog posts, WhatsApp, scheduling, per-locale text, click counts without cookies, UTM, styled QR codes with logo (light/dark), typed Store API — by Haus Kayu",
   "author": "Haus Kayu <dev@hauskayu.com> (https://hauskayu.com)",
   "license": "MIT",

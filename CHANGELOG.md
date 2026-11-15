@@ -3,6 +3,13 @@
 All notable changes to medusa-link-in-bio. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [Semantic Versioning](https://semver.org).
 
+## [0.2.1] — 2026-11-15
+
+### Fixed
+- Admin: the address shown under the handle fields (page form, "New page") was built from a hard-coded `/links`;
+  it follows the plugin's `storefront.paths` now, like the QR codes and page URLs always did.
+  `/admin/link-in-bio/config` returns `paths`.
+
 ## [0.2.0] — 2026-11-15
 
 ### Added
@@ -52,6 +59,7 @@ First release.
   (`medusa-link-in-bio/sdk`), Admin UI in English and Indonesian.
 - Safety: `http(s)`-only URLs, no open redirect, per-IP rate limit, 410 for anything unavailable.
 
+[0.2.1]: https://github.com/haustex/cm-medusa-link-in-bio/releases/tag/v0.2.1
 [0.2.0]: https://github.com/haustex/cm-medusa-link-in-bio/releases/tag/v0.2.0
 [0.1.1]: https://github.com/haustex/cm-medusa-link-in-bio/releases/tag/v0.1.1
 [0.1.0]: https://github.com/haustex/cm-medusa-link-in-bio/releases/tag/v0.1.0
