@@ -36,6 +36,7 @@ export type PageRow = {
   profile_style: ProfileStyle | string
   hero: string | null
   hero_ratio: HeroRatio | string
+  hero_avatar: boolean
   qr_logo: string | null
   focus: PageFocus | null
   files: PageFiles | null

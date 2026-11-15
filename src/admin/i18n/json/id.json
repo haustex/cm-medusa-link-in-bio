@@ -82,13 +82,15 @@
       "profileCircle": "Lingkaran — avatar bulat",
       "profileHero": "Hero — gambar header lebar",
       "profileStyleCircleHint": "Avatar dalam lingkaran di atas nama.",
-      "profileStyleHeroHint": "Gambar header lebar yang memudar ke warna latar; avatar (opsional) tampil kecil di tepi bawahnya.",
+      "profileStyleHeroHint": "Gambar header lebar yang memudar ke warna latar; nama dan bio langsung di bawahnya, atau avatar kecil di tepi bawahnya.",
       "hero": "Gambar header",
       "heroHint": "Tampil selebar halaman di atas; letakkan subjek dekat titik fokus.",
       "heroRatio": "Rasio header",
       "heroUrl": "…atau URL gambar header",
+      "heroAvatar": "Tampilkan avatar di atas header",
+      "heroAvatarHint": "Mati: nama dan bio langsung di bawah gambar header.",
       "avatarHint": "Paling pas persegi; tampil dalam lingkaran. Kosong = inisial nama tampil.",
-      "avatarHeroHint": "Opsional pada gaya hero: tampil kecil di tepi bawah header.",
+      "avatarHeroHint": "Tampil kecil di tepi bawah header dengan cincin warna latar. Kosong = inisial nama.",
       "avatarUrl": "…atau URL avatar"
     },
     "item": {

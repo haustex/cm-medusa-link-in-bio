@@ -14,6 +14,7 @@ export const AdminPageBody = z.object({
   profile_style: z.string().max(16).optional(),
   hero: nullableString(2048),
   hero_ratio: z.string().max(8).optional(),
+  hero_avatar: z.boolean().optional(),
   qr_logo: nullableString(2048),
   focus: z.object({ avatar: z.unknown().optional(), hero: z.unknown().optional() }).optional(),
   socials: z.array(z.object({ network: z.string().max(32), url: z.string().max(2048) })).max(20).optional(),

@@ -60,6 +60,7 @@ export type AdminPageInput = {
   profile_style?: ProfileStyle
   hero?: string | null
   hero_ratio?: HeroRatio
+  hero_avatar?: boolean
   qr_logo?: string | null
   focus?: { avatar?: Focus | null; hero?: Focus | null }
   socials?: Social[]

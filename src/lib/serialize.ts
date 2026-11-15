@@ -22,6 +22,8 @@ export type AdminPage = {
   profile_style: ProfileStyle
   hero: string | null
   hero_ratio: HeroRatio
+  /** "hero" style: the avatar small over the hero's lower edge; false = name and bio right under the hero */
+  hero_avatar: boolean
   qr_logo: string | null
   /** Focal points in percent (null = centre) */
   focus: { avatar: Focus | null; hero: Focus | null }
@@ -60,6 +62,7 @@ export function toAdminPage(p: PageRow): AdminPage {
     profile_style: cleanProfileStyle(p.profile_style),
     hero: p.hero ?? null,
     hero_ratio: cleanHeroRatio(p.hero_ratio),
+    hero_avatar: p.hero_avatar === true,
     qr_logo: p.qr_logo ?? null,
     focus: { avatar: cleanFocus(p.focus?.avatar), hero: cleanFocus(p.focus?.hero) },
     uploads: { avatar: !!p.files?.avatar, hero: !!p.files?.hero, qr_logo: !!p.files?.qr_logo },

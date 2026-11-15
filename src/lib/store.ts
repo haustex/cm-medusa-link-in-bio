@@ -52,6 +52,8 @@ export type StorePage = {
   hero_alt: string | null
   /** Aspect ratio to reserve for the hero ("16:9" | "3:2"), so the page never shifts while it loads */
   hero_ratio: HeroRatio
+  /** "hero" style only: draw the avatar small over the hero's lower edge; false = name and bio right under the hero */
+  hero_avatar: boolean
   /** Focal points in percent for object-position / cropping; null = centre */
   focus: { avatar: Focus | null; hero: Focus | null }
   og_image: string | null
@@ -241,6 +243,7 @@ export async function storePage(container: MedusaContainer, page: PageRow, ctx: 
     hero: page.hero ?? null,
     hero_alt: tr?.hero_alt ?? null,
     hero_ratio: cleanHeroRatio(page.hero_ratio),
+    hero_avatar: page.hero_avatar === true,
     focus: { avatar: cleanFocus(page.focus?.avatar), hero: cleanFocus(page.focus?.hero) },
     og_image: page.og_image ?? null,
     noindex: !!page.noindex,

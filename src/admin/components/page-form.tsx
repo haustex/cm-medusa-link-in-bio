@@ -17,6 +17,7 @@ type Draft = {
   profile_style: ProfileStyle
   hero: string
   hero_ratio: HeroRatio
+  hero_avatar: boolean
   focus: { avatar: Focus | null; hero: Focus | null }
   og_image: string
   translations: Record<string, { title: string; bio: string; seo_title: string; seo_description: string; avatar_alt: string; hero_alt: string }>
@@ -38,6 +39,7 @@ const fromPage = (p: AdminPage): Draft => ({
   profile_style: p.profile_style ?? "circle",
   hero: p.hero ?? "",
   hero_ratio: p.hero_ratio ?? "16:9",
+  hero_avatar: p.hero_avatar === true,
   focus: { avatar: p.focus?.avatar ?? null, hero: p.focus?.hero ?? null },
   og_image: p.og_image ?? "",
   translations: Object.fromEntries(p.locales.map((l) => [l, { title: p.translations[l]?.title ?? "", bio: p.translations[l]?.bio ?? "", seo_title: p.translations[l]?.seo_title ?? "", seo_description: p.translations[l]?.seo_description ?? "", avatar_alt: p.translations[l]?.avatar_alt ?? "", hero_alt: p.translations[l]?.hero_alt ?? "" }])),
@@ -63,6 +65,7 @@ function toInput(d: Draft): AdminPageInput {
     profile_style: d.profile_style,
     hero: d.hero || null,
     hero_ratio: d.hero_ratio,
+    hero_avatar: d.hero_avatar,
     focus: d.focus,
     og_image: d.og_image || null,
     translations,
@@ -168,14 +171,25 @@ export function PageForm({ page, config }: { page: AdminPage; config: AdminConfi
                 <Input type="url" inputMode="url" value={d.hero} onChange={(e) => set({ hero: e.target.value })} placeholder="https://" style={{ height: 44 }} />
               </Field>
             </div>
+            <label className="flex items-center justify-between gap-3">
+              <span className="flex flex-col">
+                <Text size="small" weight="plus">{t("lib.page.heroAvatar")}</Text>
+                <Text size="xsmall" className="text-ui-fg-muted">{t("lib.page.heroAvatarHint")}</Text>
+              </span>
+              <Switch checked={d.hero_avatar} onCheckedChange={(v) => set({ hero_avatar: v })} data-testid="lib-hero-avatar" />
+            </label>
           </>
         )}
-        <Field label={t("lib.page.avatar")} hint={t(d.profile_style === "hero" ? "lib.page.avatarHeroHint" : "lib.page.avatarHint")}>
-          <UploadSlot page={page} slot="avatar" config={config} url={d.avatar} ratio={1} round focus={d.focus.avatar} onFocus={(f) => set({ focus: { ...d.focus, avatar: f } })} alt={altOf("avatar_alt")} onAlt={(l, v) => setT(l, "avatar_alt", v)} onPage={fromUpload} />
-        </Field>
-        <Field label={t("lib.page.avatarUrl")}>
-          <Input type="url" inputMode="url" value={d.avatar} onChange={(e) => set({ avatar: e.target.value })} placeholder="https://" style={{ height: 44 }} />
-        </Field>
+        {(d.profile_style !== "hero" || d.hero_avatar) && (
+          <>
+            <Field label={t("lib.page.avatar")} hint={t(d.profile_style === "hero" ? "lib.page.avatarHeroHint" : "lib.page.avatarHint")}>
+              <UploadSlot page={page} slot="avatar" config={config} url={d.avatar} ratio={1} round focus={d.focus.avatar} onFocus={(f) => set({ focus: { ...d.focus, avatar: f } })} alt={altOf("avatar_alt")} onAlt={(l, v) => setT(l, "avatar_alt", v)} onPage={fromUpload} />
+            </Field>
+            <Field label={t("lib.page.avatarUrl")}>
+              <Input type="url" inputMode="url" value={d.avatar} onChange={(e) => set({ avatar: e.target.value })} placeholder="https://" style={{ height: 44 }} />
+            </Field>
+          </>
+        )}
         <Field label={t("lib.page.ogImage")} hint={t("lib.page.ogImageHint")}>
           <Input type="url" inputMode="url" value={d.og_image} onChange={(e) => set({ og_image: e.target.value })} placeholder="https://" style={{ height: 44 }} />
         </Field>

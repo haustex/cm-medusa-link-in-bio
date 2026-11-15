@@ -78,7 +78,8 @@ out of the box; for any other storefront see [Storefront](#storefront).
   never. Preview with a focal point set by clicking (kept in view when the storefront crops: avatar 1:1, hero 16:9
   or 3:2), alt text per locale. Replacing or removing deletes the previous file, so nothing piles up; pasting an
   external URL instead still works. Two **profile styles** per page: *circle* (the avatar, or the initials) and
-  *hero* (the header image full width, fading into the page colour, the avatar small over its edge).
+  *hero* (the header image full width, fading into the page colour, the name and bio right under it; a switch per
+  page puts the avatar small over its edge instead).
 - **Items**, drag-and-drop ordered, each with label and second line per locale, optional image or icon, "featured"
   size, visible switch and a show-from / hide-after schedule:
   - **Link**: any `http(s)` URL.
@@ -195,8 +196,9 @@ Both store routes need the publishable API key; `/l/{key}` does not.
 image), `/pages/{id}/stats?days=30`,
 `/qr?page_id=&locale=|item_id=&format=svg|png&size=&download=1&theme=light|dark&logo=brand|page|none`,
 `/search?type=product|collection|category|post&q=`. Page fields for the images: `avatar`, `hero`, `qr_logo` (URLs),
-`profile_style` (`circle` | `hero`), `hero_ratio` (`16:9` | `3:2`), `focus: { avatar, hero }` (`{ x, y }` in
-percent, null = centre), `uploads` (which of them the plugin owns), translations `avatar_alt` / `hero_alt`. Rule
+`profile_style` (`circle` | `hero`), `hero_ratio` (`16:9` | `3:2`), `hero_avatar` (boolean, default false: with the
+hero style, draw the avatar small over the hero's edge), `focus: { avatar, hero }` (`{ x, y }` in percent, null =
+centre), `uploads` (which of them the plugin owns), translations `avatar_alt` / `hero_alt`. Rule
 violations answer `{ code, message, detail }` with codes `invalid_url`, `invalid_handle`, `handle_taken`,
 `reserved_handle`, `invalid_locale`, `invalid_target`, `invalid_date`, `invalid_image`, `file_too_large` (413),
 `invalid`, `not_found`. `linkInBioAdmin(sdk)` in `medusa-link-in-bio/sdk` wraps all of them (`upload(id, slot,
@@ -234,8 +236,8 @@ or set `redirect_url` to any address that forwards to the backend's `/l/{key}`.
   yang dipakai proyek): **avatar** (bulat) dan **hero** (gambar header). JPEG/PNG/WebP/AVIF dikenali dari magic
   bytes, maks 5 MB, SVG ditolak. Pratinjau dengan titik fokus (klik gambar; dipakai saat dipotong: avatar 1:1, hero
   16:9 atau 3:2), teks alt per bahasa. Ganti/hapus menghapus file lama (tidak ada file yatim). Dua **gaya profil**
-  per halaman: *lingkaran* (avatar atau inisial) dan *hero* (header lebar penuh yang memudar ke warna latar, avatar
-  kecil menimpa tepi bawahnya).
+  per halaman: *lingkaran* (avatar atau inisial) dan *hero* (header lebar penuh yang memudar ke warna latar, nama dan
+  bio langsung di bawahnya; saklar per halaman menampilkan avatar kecil di tepi bawahnya).
 - **Item** diurutkan drag-and-drop, masing-masing dengan label dan baris kedua per bahasa, gambar atau ikon, ukuran
   unggulan, saklar tampil, dan jadwal tampil-mulai / sembunyikan-setelah: tautan, produk (harga terendah di region
   pengunjung + stok, live), koleksi, kategori, kode promo (disalin sekali ketuk, opsional dengan tautan), artikel

@@ -12,8 +12,9 @@ versions follow [Semantic Versioning](https://semver.org).
   another URL over an upload deletes it too; deleting the page deletes its files. `POST`/`DELETE
   /admin/link-in-bio/pages/{id}/upload?slot=avatar|hero|qr_logo`; SDK `upload()` / `removeUpload()`.
 - Profile styles per page: `profile_style` `circle` (as before) or `hero` (the header image full width, fading into
-  the page colour, the avatar small over its edge), `hero_ratio` `16:9` | `3:2`, focal points `focus.avatar` /
-  `focus.hero` (percent, set by clicking the preview), alt texts `avatar_alt` / `hero_alt` per locale. All of it in
+  the page colour, the name and bio right under it), `hero_ratio` `16:9` | `3:2`, `hero_avatar` (off by default;
+  on, the avatar sits small over the hero's lower edge), focal points `focus.avatar` / `focus.hero` (percent, set by
+  clicking the preview), alt texts `avatar_alt` / `hero_alt` per locale. All of it in
   the Store API, so a storefront can draw the page without layout shift and crop around the focal point.
 - QR codes drawn by the plugin: round modules, rounded finder eyes, error correction H, a centre logo on a white
   badge (plugin option `qr.logo`, or the page's upload; `logo=brand|page|none`), light or dark theme

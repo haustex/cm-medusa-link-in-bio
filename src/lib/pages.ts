@@ -32,6 +32,7 @@ export type PageInput = {
   profile_style?: string
   hero?: string | null
   hero_ratio?: string
+  hero_avatar?: boolean
   qr_logo?: string | null
   /** { avatar?: { x, y }, hero?: { x, y } } in percent; a slot set to null goes back to the centre */
   focus?: { avatar?: unknown; hero?: unknown }
@@ -124,6 +125,7 @@ export async function createPage(container: MedusaContainer, input: PageInput): 
     profile_style: cleanProfileStyle(input.profile_style),
     hero: image(input.hero, "hero"),
     hero_ratio: cleanHeroRatio(input.hero_ratio),
+    hero_avatar: input.hero_avatar === true,
     qr_logo: image(input.qr_logo, "qr_logo"),
     focus: focusOf(input.focus, null),
     files: null,
@@ -172,6 +174,7 @@ export async function updatePage(container: MedusaContainer, id: string, input: 
   if (files !== (page.files ?? null)) data.files = files
   if (input.profile_style !== undefined) data.profile_style = cleanProfileStyle(input.profile_style, cleanProfileStyle(page.profile_style))
   if (input.hero_ratio !== undefined) data.hero_ratio = cleanHeroRatio(input.hero_ratio, cleanHeroRatio(page.hero_ratio))
+  if (input.hero_avatar !== undefined) data.hero_avatar = input.hero_avatar === true
   if (input.focus !== undefined) data.focus = focusOf(input.focus, page.focus)
   if (input.socials !== undefined) data.socials = cleanSocials(input.socials)
   if (input.theme !== undefined) data.theme = cleanTheme(input.theme, cleanTheme(page.theme))

@@ -83,13 +83,15 @@
       "profileCircle": "Circle — round avatar",
       "profileHero": "Hero — wide header image",
       "profileStyleCircleHint": "The avatar in a circle above the name.",
-      "profileStyleHeroHint": "A wide header image fading into the background; the avatar (optional) sits small over its lower edge.",
+      "profileStyleHeroHint": "A wide header image fading into the background; the name and bio right under it, or the avatar small over its lower edge.",
       "hero": "Header image",
       "heroHint": "Shown full width at the top; keep the subject near the focal point.",
       "heroRatio": "Header ratio",
       "heroUrl": "…or header image URL",
+      "heroAvatar": "Show the avatar over the header",
+      "heroAvatarHint": "Off: the name and bio sit right under the header image.",
       "avatarHint": "Square works best; it is shown in a circle. Empty = the initials of the display name.",
-      "avatarHeroHint": "Optional with the hero style: shown small over the header's lower edge.",
+      "avatarHeroHint": "Shown small over the header's lower edge, with a ring in the page colour. Empty = the initials.",
       "avatarUrl": "…or avatar URL"
     },
     "item": {

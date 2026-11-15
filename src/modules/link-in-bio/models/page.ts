@@ -26,6 +26,8 @@ const Page = model
     hero: model.text().nullable(),
     /** Aspect ratio the storefront reserves for the hero: "16:9" or "3:2" */
     hero_ratio: model.text().default("16:9"),
+    /** "hero" style: show the avatar small over the hero's lower edge (false = name and bio right under the hero) */
+    hero_avatar: model.boolean().default(false),
     /** Centre logo for this page's QR codes (upload); null = the brand logo from the plugin options */
     qr_logo: model.text().nullable(),
     /** Focal points in percent: { avatar?: { x, y }, hero?: { x, y } } */
