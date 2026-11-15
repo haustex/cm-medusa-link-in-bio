@@ -8,7 +8,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { CreditFooter } from "../../components/credit-footer"
 import { Field, Loading } from "../../components/states"
 import { LibStyles } from "../../components/styles"
-import { api, CONFIG_KEY, errorOf, formatNumber, lang, PAGES_KEY } from "../../lib/api"
+import { api, CONFIG_KEY, errorOf, formatNumber, lang, PAGES_KEY, pagePreviewUrl } from "../../lib/api"
 
 const PagesPage = () => {
   const { t, i18n } = useTranslation()
@@ -58,7 +58,7 @@ const PagesPage = () => {
               <Field label={t("lib.page.name")}>
                 <Input required autoFocus maxLength={120} value={name} onChange={(e) => setName(e.target.value)} style={{ height: 44 }} />
               </Field>
-              <Field label={t("lib.page.handle")} hint={config?.storefront_url ? `${config.storefront_url}${(handle || "…") === config.main_handle ? "/links" : `/links/${handle || "…"}`}` : undefined}>
+              <Field label={t("lib.page.handle")} hint={config?.storefront_url ? pagePreviewUrl(config, handle) : undefined}>
                 <Input maxLength={64} value={handle} autoCapitalize="none" spellCheck={false} placeholder={config?.main_handle ?? "links"} onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, "-"))} style={{ height: 44 }} />
               </Field>
               <Field label={t("lib.page.locales")} hint={t("lib.page.localesHint")}>

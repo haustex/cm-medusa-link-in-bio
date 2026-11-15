@@ -3,7 +3,7 @@ import { Button, IconButton, Input, Select, Switch, Text, Textarea, toast } from
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { api, errorOf, pageKey, PAGES_KEY, type AdminConfig, type AdminPage, type AdminPageInput, type Focus, type HeroRatio, type ProfileStyle, type Social, type SocialNetwork, type Theme } from "../lib/api"
+import { api, errorOf, pageKey, pagePreviewUrl, PAGES_KEY, type AdminConfig, type AdminPage, type AdminPageInput, type Focus, type HeroRatio, type ProfileStyle, type Social, type SocialNetwork, type Theme } from "../lib/api"
 import { Field } from "./states"
 import { UploadSlot } from "./upload-slot"
 
@@ -110,7 +110,7 @@ export function PageForm({ page, config }: { page: AdminPage; config: AdminConfi
     },
   })
   const networks = config?.networks ?? []
-  const urlFor = (handle: string) => (config?.storefront_url ? `${config.storefront_url}${handle === (config.main_handle ?? "links") ? "/links" : `/links/${handle || "…"}`}` : "")
+  const urlFor = (handle: string) => pagePreviewUrl(config, handle)
   return (
     <form
       className="flex flex-col"

@@ -1,6 +1,7 @@
 import { linkInBioAdmin } from "../../sdk"
 import { sdk } from "./client"
 
+export { pagePreviewUrl } from "./preview"
 export type { AdminConfig, AdminItem, AdminItemInput, AdminPage, AdminPageInput, Focus, HeroRatio, ImageSlot, ItemType, PageStats, ProfileStyle, QrLogo, QrTheme, SearchResult, Social, SocialNetwork, Theme } from "../../sdk"
 export const api = linkInBioAdmin(sdk)
 

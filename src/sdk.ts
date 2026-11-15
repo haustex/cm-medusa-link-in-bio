@@ -38,6 +38,8 @@ export type AdminConfig = {
   show_credit: boolean
   storefront_url: string | null
   main_handle: string
+  /** Where the storefront serves the pages (plugin option storefront.paths): the main handle, and `{handle}` for the others */
+  paths: { main: string; page: string }
   redirect_url: string | null
   blog: boolean
   clicks: boolean

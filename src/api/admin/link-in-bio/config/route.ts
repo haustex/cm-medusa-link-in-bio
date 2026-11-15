@@ -11,6 +11,7 @@ export async function GET(req: AuthenticatedMedusaRequest, res: MedusaResponse) 
     show_credit: o.showCredit,
     storefront_url: o.storefront.url,
     main_handle: o.storefront.main_handle,
+    paths: { main: o.storefront.paths.main, page: o.storefront.paths.page },
     redirect_url: o.redirect_url,
     blog: hasBlog(req.scope),
     clicks: o.clicks.enabled,
