@@ -18,7 +18,8 @@
     "back": "Pages",
     "published": "Published",
     "draft": "Draft",
-    "items": "{{count}} item",
+    "items_one": "{{count}} item",
+    "items_other": "{{count}} items",
     "items_plural": "{{count}} items",
     "clicks7": "7 days",
     "clicks30": "30 days",
@@ -142,7 +143,8 @@
       "missing": "Target missing (deleted or unpublished)",
       "dragHint": "Drag to reorder",
       "noBlog": "medusa-blog-seo is not installed.",
-      "clicks": "{{count}} clicks"
+      "clicks_one": "{{count}} click",
+      "clicks_other": "{{count}} clicks"
     },
     "picker": {
       "search": "Search…",
