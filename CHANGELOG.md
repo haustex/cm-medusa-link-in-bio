@@ -16,6 +16,7 @@ First release.
   bots and DNT/GPC visitors not counted, buffered writes; 7/30-day and total counts and a daily chart in the Admin.
 - Automatic UTM parameters (page and item switches, never over existing `utm_*`).
 - QR codes per page (per locale) and per link, SVG and PNG.
+- `revalidate` option: batched `POST { link_in_bio: { handles, all } }` to the storefront after public changes.
 - Store API (`/store/link-in-bio/pages`, `/store/link-in-bio/pages/{handle}`), Admin API, typed SDK
   (`medusa-link-in-bio/sdk`), Admin UI in English and Indonesian.
 - Safety: `http(s)`-only URLs, no open redirect, per-IP rate limit, 410 for anything unavailable.

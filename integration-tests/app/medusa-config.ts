@@ -27,6 +27,7 @@ module.exports = defineConfig({
         clicks: { flush_ms: 0, count_bots: process.env.LIB_COUNT_BOTS === "1" },
         rate_limit: { max: Number(process.env.LIB_RATE_MAX ?? 0), window_seconds: 60 },
         reserved_handles: ["admin"],
+        revalidate: process.env.LIB_REVALIDATE_URL ? { url: process.env.LIB_REVALIDATE_URL, secret: "e2e-revalidate", delay_ms: 300 } : undefined,
         showCredit: process.env.LIB_CREDIT === "1", // off by default, as in the plugin
       },
     },

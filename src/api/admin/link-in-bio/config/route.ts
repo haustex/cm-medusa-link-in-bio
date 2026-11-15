@@ -15,5 +15,6 @@ export async function GET(req: AuthenticatedMedusaRequest, res: MedusaResponse) 
     clicks: o.clicks.enabled,
     utm: o.utm,
     networks: SOCIAL_NETWORKS,
+    revalidate: !!o.revalidate,
   })
 }

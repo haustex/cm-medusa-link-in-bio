@@ -11,6 +11,7 @@
 // LIB_ADMIN=1 also builds the Admin and checks the bundle. Every medusa command goes through scripts/guard.mjs.
 import { spawn, spawnSync } from "node:child_process"
 import fs from "node:fs"
+import http from "node:http"
 import { createRequire } from "node:module"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
@@ -31,6 +32,7 @@ const BASE = `http://127.0.0.1:${PORT}`
 const ADMIN = { email: "admin@e2e.test", password: "e2e-password-123" }
 const KEEP = process.env.LIB_KEEP === "1"
 const RATE_MAX = 400
+const HOOK_PORT = 9701
 
 const env = {
   ...process.env,
@@ -40,6 +42,7 @@ const env = {
   LIB_PLUGIN_DIR: PACKAGE,
   LIB_CREDIT: "1",
   LIB_RATE_MAX: String(RATE_MAX),
+  LIB_REVALIDATE_URL: `http://127.0.0.1:${HOOK_PORT}/api/revalidate`,
   NODE_ENV: "development",
 }
 // REDIS_URL only satisfies the guard; the test app uses the in-memory event bus and workflow engine
@@ -194,13 +197,45 @@ async function setupStore() {
 
 const flush = () => api("POST", "/admin/e2e/flush", { body: {} })
 
+/** Stand-in for the storefront's revalidate endpoint */
+const hooks = []
+function startHookServer() {
+  return new Promise((resolve) => {
+    const server = http.createServer((req, res) => {
+      let data = ""
+      req.on("data", (c) => (data += c))
+      req.on("end", () => {
+        let body
+        try {
+          body = JSON.parse(data)
+        } catch {
+          body = data
+        }
+        hooks.push({ url: req.url, secret: req.headers["x-revalidate-secret"], body })
+        res.writeHead(200, { "content-type": "application/json" })
+        res.end(JSON.stringify({ ok: true }))
+      })
+    })
+    server.listen(HOOK_PORT, "127.0.0.1", () => resolve(server))
+  })
+}
+async function waitHook(pred, ms = 4000) {
+  const started = Date.now()
+  while (Date.now() - started < ms) {
+    const hit = hooks.find(pred)
+    if (hit) return hit
+    await new Promise((r) => setTimeout(r, 100))
+  }
+  return null
+}
+
 async function checks() {
   await login()
   const store = await setupStore()
 
   section("Config")
   let r = await api("GET", "/admin/link-in-bio/config")
-  check("config: credit on (test app), no blog, storefront + redirect template, networks", r.status === 200 && r.json.show_credit === true && r.json.blog === false && r.json.storefront_url === "https://storefront.e2e.test" && r.json.redirect_url === "https://storefront.e2e.test/l/{key}" && r.json.networks.includes("instagram"), r.json)
+  check("config: credit on (test app), no blog, storefront + redirect template, networks, revalidate", r.status === 200 && r.json.show_credit === true && r.json.blog === false && r.json.storefront_url === "https://storefront.e2e.test" && r.json.redirect_url === "https://storefront.e2e.test/l/{key}" && r.json.networks.includes("instagram") && r.json.revalidate === true, r.json)
 
   section("Pages")
   r = await api("GET", "/admin/link-in-bio/pages")
@@ -224,6 +259,9 @@ async function checks() {
   check("translation in a locale the page does not have → 400", r.status === 400 && r.json.code === "invalid_locale", r.json)
   r = await api("POST", `/admin/link-in-bio/pages/${page.id}`, { body: { utm_campaign: "bio", noindex: true, translations: { en: { seo_title: "Haus Kayu — links" } } } })
   check("page updated (utm_campaign, noindex, en seo_title)", r.status === 200 && r.json.page.utm_campaign === "bio" && r.json.page.noindex === true && r.json.page.translations.en.seo_title === "Haus Kayu — links" && r.json.page.translations.id.bio === "Furnitur jati dari Jepara", r.json)
+  let hook = await waitHook((h) => h.body?.link_in_bio?.handles?.includes("links"))
+  check("page changes → one batched revalidate call { link_in_bio: { handles } } with the secret", !!hook && hook.secret === "e2e-revalidate" && hook.url === "/api/revalidate" && hook.body.link_in_bio.handles.includes("ramadan-2026"), hooks)
+  hooks.length = 0
 
   section("Items")
   const add = (body) => api("POST", `/admin/link-in-bio/pages/${page.id}/items`, { body })
@@ -292,6 +330,9 @@ async function checks() {
   check("item updated (utm off, en note)", r.status === 200 && r.json.item.utm === false && r.json.item.translations.en.note === "Daily posts" && r.json.item.translations.id.label === "Instagram", r.json)
   r = await api("DELETE", `/admin/link-in-bio/pages/${page.id}/items/${top.id}`)
   check("item deleted, ranks renumbered", r.status === 200 && (await api("GET", `/admin/link-in-bio/pages/${page.id}/items`)).json.items.every((i, idx) => i.rank === idx), r.json)
+  hook = await waitHook((h) => h.body?.link_in_bio?.handles?.includes("links"))
+  check("item changes → revalidate for the page's handle", !!hook, hooks)
+  hooks.length = 0
   r = await api("GET", `/admin/link-in-bio/pages/${page2.id}/items/${ig.id}`)
   check("item of another page → 404", r.status === 404, r.json)
 
@@ -420,6 +461,8 @@ async function checks() {
   section("Delete page")
   r = await api("DELETE", `/admin/link-in-bio/pages/${page2.id}`)
   check("page2 deleted", r.status === 200 && r.json.deleted === true, r.json)
+  hook = await waitHook((h) => h.body?.link_in_bio?.all === true)
+  check("deleted page → revalidate all", !!hook && hook.body.link_in_bio.handles.includes("ramadan-2026"), hooks)
   r = await api("GET", "/store/link-in-bio/pages/ramadan-2026", { store: true })
   check("…its store page is 404", r.status === 404, r.status)
   r = await api("GET", `/admin/link-in-bio/pages/${page2.id}`)
@@ -464,6 +507,7 @@ async function main() {
     fs.symlinkSync(path.join(APP_DIR, "node_modules"), path.join(serverDir, "node_modules"))
     checkAdminBuild(serverDir)
   }
+  const hookServer = await startHookServer()
   const log = fs.openSync(path.join(STATE_DIR, "server.log"), "w")
   const server = spawn("node", [GUARD, MEDUSA, "start"], { cwd: serverDir, env, stdio: ["ignore", log, log], detached: true })
   try {
@@ -485,6 +529,7 @@ async function main() {
     try {
       process.kill(-server.pid, "SIGTERM")
     } catch {}
+    hookServer.close()
   }
   console.log(`\n${passes} passed, ${failures} failed`)
   process.exit(failures ? 1 : 0)

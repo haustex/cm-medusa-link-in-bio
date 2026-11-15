@@ -4,6 +4,7 @@ import { LINK_IN_BIO_MODULE } from "../modules/link-in-bio"
 import { newKey } from "./keys"
 import { normalizeLocale } from "./locales"
 import { getPage } from "./pages"
+import { pageChanged } from "./revalidate"
 import { ITEM_TYPES, UTM_TYPES, type ItemRow, type ItemTranslationRow, type ItemType, type PageRow, type Target } from "./types"
 import { cleanDate, cleanEmail, cleanPhone, cleanUrl, LibRuleError, str, strOrNull } from "./validate"
 
@@ -181,6 +182,7 @@ export async function createItem(container: MedusaContainer, pageId: string, inp
     ordered.splice(at, 0, item)
     await renumber(container, ordered)
   }
+  pageChanged(container, page.handle)
   return getItem(container, pageId, item.id)
 }
 
@@ -203,18 +205,21 @@ export async function updateItem(container: MedusaContainer, pageId: string, ite
   if (input.metadata !== undefined) data.metadata = input.metadata
   if (Object.keys(data).length > 1) await service(container).updateLibItems(data)
   if (input.translations !== undefined) await writeTranslations(container, item, page.locales as string[], input.translations, item.translations ?? [])
+  pageChanged(container, page.handle)
   return getItem(container, pageId, itemId)
 }
 
 export async function deleteItem(container: MedusaContainer, pageId: string, itemId: string): Promise<void> {
+  const page = await getPage(container, pageId)
   await getItem(container, pageId, itemId)
   await service(container).deleteLibItems([itemId])
   await renumber(container, await listItems(container, pageId))
+  pageChanged(container, page.handle)
 }
 
 /** New order: the ids given first (in that order), then the rest as they were */
 export async function reorderItems(container: MedusaContainer, pageId: string, ids: string[]): Promise<ItemRow[]> {
-  await getPage(container, pageId)
+  const page = await getPage(container, pageId)
   const items = await listItems(container, pageId)
   const byId = new Map(items.map((i) => [i.id, i]))
   const seen = new Set<string>()
@@ -229,5 +234,6 @@ export async function reorderItems(container: MedusaContainer, pageId: string, i
   }
   for (const it of items) if (!seen.has(it.id)) ordered.push(it)
   await renumber(container, ordered)
+  pageChanged(container, page.handle)
   return listItems(container, pageId)
 }

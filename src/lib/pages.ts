@@ -2,6 +2,7 @@ import type { MedusaContainer } from "@medusajs/framework/types"
 import { LINK_IN_BIO_MODULE } from "../modules/link-in-bio"
 import { cleanLocales, normalizeLocale } from "./locales"
 import { getOptions } from "./options"
+import { pageChanged } from "./revalidate"
 import type { PageRow, PageTranslationRow } from "./types"
 import { cleanHandle, cleanSocials, cleanTheme, cleanUrl, LibRuleError, str, strOrNull } from "./validate"
 
@@ -111,6 +112,7 @@ export async function createPage(container: MedusaContainer, input: PageInput): 
     metadata: input.metadata ?? null,
   })
   await writeTranslations(container, page, locales, input.translations, [])
+  pageChanged(container, handle)
   return getPage(container, page.id)
 }
 
@@ -146,12 +148,14 @@ export async function updatePage(container: MedusaContainer, id: string, input: 
   if (input.translations !== undefined || input.locales !== undefined) {
     await writeTranslations(container, { ...page, ...data } as PageRow, locales, input.translations, page.translations ?? [])
   }
+  pageChanged(container, (data.handle as string | undefined) ?? page.handle, { previous: page.handle })
   return getPage(container, id)
 }
 
 export async function deletePage(container: MedusaContainer, id: string): Promise<void> {
-  await getPage(container, id)
+  const page = await getPage(container, id)
   await service(container).deleteLibPages([id])
+  pageChanged(container, page.handle, { all: true })
 }
 
 export async function listPages(container: MedusaContainer): Promise<PageRow[]> {

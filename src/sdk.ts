@@ -33,7 +33,7 @@ export function linkInBioStore(sdk: FetchClient) {
   }
 }
 
-export type AdminConfig = { show_credit: boolean; storefront_url: string | null; main_handle: string; redirect_url: string | null; blog: boolean; clicks: boolean; utm: { source: string; medium: string }; networks: readonly SocialNetwork[] }
+export type AdminConfig = { show_credit: boolean; storefront_url: string | null; main_handle: string; redirect_url: string | null; blog: boolean; clicks: boolean; utm: { source: string; medium: string }; networks: readonly SocialNetwork[]; revalidate: boolean }
 export type AdminPageInput = {
   handle?: string
   name?: string

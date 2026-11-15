@@ -122,10 +122,16 @@ out of the box; for any other storefront see [Storefront](#storefront).
     clicks: { enabled: true, flush_ms: 5000, count_bots: false, respect_dnt: true },
     rate_limit: { window_seconds: 600, max: 300 },    // 0 disables
     reserved_handles: ["admin"],
+    revalidate: { url: "https://your-store.com/api/revalidate", secret: process.env.REVALIDATE_SECRET },
     showCredit: false,                                // "Link in bio by Haus Kayu" under the Admin pages
   },
 }
 ```
+
+`revalidate` tells the storefront about public changes: every change to a page or its items within `delay_ms`
+(default 2000) becomes one `POST { link_in_bio: { handles: ["links", …], all } }` to `url`, with the secret in the
+`x-revalidate-secret` header (`header` renames it). `all` is set when a page was deleted. Kiln's `/api/revalidate`
+takes this payload and re-renders `/links` and `/links/{handle}` in every market; another storefront can do the same.
 
 `storefront.url` is what makes internal links (products, collections, articles, the pages themselves) and the
 default redirect address; without it those items have no destination and are left out of the public page.

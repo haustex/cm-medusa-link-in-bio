@@ -62,6 +62,15 @@ export type PluginOptions = {
   }
   /** Page handles that may not be used (route segments of the storefront). Default [] */
   reserved_handles?: string[]
+  /** Tell the storefront about public changes (batched): POST { link_in_bio: { handles, all } } */
+  revalidate?: {
+    url: string
+    /** Sent in the `x-revalidate-secret` header (or `header`) */
+    secret?: string
+    header?: string
+    /** Changes within this window become one call. Default 2000 */
+    delay_ms?: number
+  }
   /** Show the small "by Haus Kayu" credit under the plugin's Admin pages. Default false */
   showCredit?: boolean
 }
@@ -81,6 +90,7 @@ export type ResolvedOptions = {
   clicks: { enabled: boolean; flush_ms: number; count_bots: boolean; respect_dnt: boolean }
   rate_limit: { window_seconds: number; max: number }
   reserved_handles: string[]
+  revalidate: { url: string; secret: string | null; header: string; delay_ms: number } | null
   showCredit: boolean
 }
 
@@ -125,6 +135,7 @@ export function resolveOptions(raw: PluginOptions | undefined): ResolvedOptions 
     clicks: { enabled: c.enabled !== false, flush_ms: num(c.flush_ms, 5000), count_bots: c.count_bots === true, respect_dnt: c.respect_dnt !== false },
     rate_limit: { window_seconds: num(rl.window_seconds, 600, 1), max: num(rl.max, 300) },
     reserved_handles: list(o.reserved_handles).map((h) => h.toLowerCase()),
+    revalidate: o.revalidate && str(o.revalidate.url) ? { url: str(o.revalidate.url)!, secret: str(o.revalidate.secret), header: str(o.revalidate.header) ?? "x-revalidate-secret", delay_ms: num(o.revalidate.delay_ms, 2000) } : null,
     showCredit: o.showCredit === true,
   }
 }
